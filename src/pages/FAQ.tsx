@@ -1,87 +1,71 @@
-import React from "react";
-import Accordion from "../components/Accordion";
-import FloralDivider from "../components/FloralDivider";
-import BgFaq from "../assets/backgrounds/bg-faq.jpg";
+import React from 'react';
+import Accordion from '../components/Accordion';
+import FloralDivider from '../components/FloralDivider';
+
+import BgFAQ from '../assets/backgrounds/bg-faq.jpg';
 
 export default function FAQ() {
   const faqs = [
     {
-      title: "How do I convert cups to grams?",
-      icon: "teacup",
+      title: 'How do I convert cups to grams?',
+      icon: 'teacup' as const,
       content:
-        "The conversion depends on the ingredient. Flour: ~125g per cup. Sugar: 200g. Butter: 227g. Use our calculator for accurate results!",
+        'The conversion depends on the ingredient. Flour: 120–125g per cup. Sugar: 200g per cup. Butter: 227g per cup. Use our calculator for precise conversions!'
     },
     {
       title: "What's the difference between fluid ounces and weight ounces?",
-      icon: "leaf",
+      icon: 'leaf' as const,
       content:
-        "Fluid ounces measure volume, while weight ounces measure mass. They differ and cannot be used interchangeably in recipes.",
+        "Fluid ounces measure volume, while weight ounces measure mass. They’re not interchangeable."
     },
     {
-      title: "Can I use this app offline?",
-      icon: "mushroom",
+      title: 'Can I use this app offline?',
+      icon: 'mushroom' as const,
       content:
-        "Yes! This PWA works offline once loaded. You can also install it to your device from the Install Prompt.",
+        'Yes! This PWA works offline after your first visit. You can also install it to your home screen.'
     },
     {
-      title: "How accurate are the conversions?",
-      icon: "teacup",
+      title: 'How accurate are the conversions?',
+      icon: 'teacup' as const,
       content:
-        "Our calculator uses standard culinary conversions. They're perfect for cooking and baking.",
+        'Our conversions follow standard culinary references. They are ideal for home cooking and baking.'
     },
     {
-      title: "How do I print the conversion charts?",
-      icon: "leaf",
+      title: 'How do I print the conversion charts?',
+      icon: 'leaf' as const,
       content:
-        "Visit the Printables page, tap Download on any chart, then print from your device.",
+        "Go to the Printables page, tap any chart’s Download button, and print the saved file."
     },
 
-    // ⭐ NEW FAQ QUESTIONS ⭐
+    // NEW FAQ ENTRIES
     {
-      title: "How do I scale a recipe for more or fewer servings?",
-      icon: "mushroom",
+      title: 'Why do different flour brands weigh differently?',
+      icon: 'mushroom' as const,
       content:
-        "Use the Recipe Scaler in the Calculator page! Enter your original servings and new servings to instantly scale ingredient quantities.",
+        'Flour compacts differently depending on humidity and brand. Always spoon-and-level for the most consistent results.'
     },
     {
-      title: "Why don’t cup-to-gram conversions match package labels?",
-      icon: "leaf",
+      title: 'What’s the easiest way to halve a recipe with 1 egg?',
+      icon: 'leaf' as const,
       content:
-        "Ingredients vary in density. For example, flour can weigh 110g–130g per cup depending on how it’s scooped. Our calculator uses standard culinary averages.",
+        'Beat the egg, measure it, and use half (about 1.5 tablespoons).'
     },
     {
-      title: "How can I convert a US recipe into metric?",
-      icon: "teacup",
+      title: 'Is it okay to substitute baking soda for baking powder?',
+      icon: 'teacup' as const,
       content:
-        "Use our Volume and Weight conversion categories. Cups → ml, ounces → grams, and Fahrenheit → Celsius.",
-    },
-    {
-      title: "What’s the best way to measure flour?",
-      icon: "leaf",
-      content:
-        "Spoon flour into a measuring cup and level it. Scooping compacts it and adds extra weight, affecting baking accuracy.",
-    },
-    {
-      title: "Can I substitute butter for oil?",
-      icon: "mushroom",
-      content:
-        "Generally yes! Use a 1:1 ratio, but baked goods may be denser. Melt the butter first for best texture.",
-    },
-    {
-      title: "What is a PWA and how do I install it?",
-      icon: "teacup",
-      content:
-        "A PWA is a web app that works offline and can be installed like an app. When prompted, choose 'Add to Home Screen'.",
-    },
+        'Sometimes! But you also need acid (like lemon or vinegar) for baking soda to activate.'
+    }
   ];
 
   return (
     <div
       className="min-h-screen pb-28 page-transition page-bg"
-      style={{ backgroundImage: `url(${BgFaq})` }}
+      style={{ backgroundImage: `url(${BgFAQ})` }}
     >
       <div className="bg-[#1b302c]/30 min-h-screen px-4 py-8">
         <div className="max-w-3xl mx-auto">
+
           <div className="text-center mb-6">
             <h1 className="text-4xl font-bold text-white drop-shadow-lg">
               Frequently Asked Questions
@@ -95,7 +79,7 @@ export default function FAQ() {
 
           <div className="mt-8 space-y-4">
             {faqs.map((faq, idx) => (
-              <Accordion key={idx} title={faq.title} icon={faq.icon} defaultOpen={idx === 0}>
+              <Accordion key={idx} title={faq.title} icon={faq.icon}>
                 <p className="leading-relaxed">{faq.content}</p>
               </Accordion>
             ))}
@@ -108,7 +92,7 @@ export default function FAQ() {
               Still have questions?
             </h2>
             <p className="text-[#5f3c43]">
-              Explore the Conversion Guide or use the Calculator for precise conversions.
+              Explore our Conversions Guide or try the Calculator for instant results.
             </p>
           </div>
         </div>

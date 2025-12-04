@@ -1,7 +1,8 @@
-import React from "react";
-import FloralDivider from "../components/FloralDivider";
-import DecorativeFrame from "../components/DecorativeFrame";
-import BgAbout from "../assets/backgrounds/bg-about.png";
+import React from 'react';
+import FloralDivider from '../components/FloralDivider';
+import DecorativeFrame from '../components/DecorativeFrame';
+
+import BgAbout from '../assets/backgrounds/bg-about.png';
 
 export default function About() {
   return (
@@ -11,6 +12,7 @@ export default function About() {
     >
       <div className="bg-[#1b302c]/30 min-h-screen px-4 py-8">
         <div className="max-w-3xl mx-auto">
+
           <div className="text-center mb-6">
             <h1 className="text-4xl font-bold text-white drop-shadow-lg">About Us</h1>
           </div>
@@ -19,6 +21,7 @@ export default function About() {
 
           <DecorativeFrame className="mt-8">
             <div className="parchment-card p-8">
+
               <p className="text-[#1b302c] text-lg leading-relaxed mb-6">
                 Welcome to <strong className="text-[#3c6150]">The Conversion Kitchen</strong> — your cozy corner of the internet where warm cottage vibes meet practical kitchen magic.
               </p>

@@ -1,26 +1,27 @@
-import React, { useState } from "react";
-import { convert } from "../utils/conversions";
-import FloralDivider from "../components/FloralDivider";
-import DecorativeFrame from "../components/DecorativeFrame";
-import BgCalculator from "../assets/backgrounds/bg-calculator.jpg";
+import React, { useState } from 'react';
+import { convert } from '../utils/conversions';
+
+import BgCalculator from '../assets/backgrounds/bg-calculator.jpg';
+import FloralDivider from '../components/FloralDivider';
+import DecorativeFrame from '../components/DecorativeFrame';
 
 export default function Calculator() {
-  const [category, setCategory] = useState("volume");
-  const [value, setValue] = useState("");
-  const [fromUnit, setFromUnit] = useState("cup");
-  const [toUnit, setToUnit] = useState("ml");
-  const [result, setResult] = useState("");
+  const [category, setCategory] = useState('volume');
+  const [value, setValue] = useState('');
+  const [fromUnit, setFromUnit] = useState('cup');
+  const [toUnit, setToUnit] = useState('ml');
+  const [result, setResult] = useState('');
   const [showToast, setShowToast] = useState(false);
 
-  // Recipe scaler state
-  const [originalServings, setOriginalServings] = useState("");
-  const [newServings, setNewServings] = useState("");
-  const [scaledAmount, setScaledAmount] = useState("");
+  // New Recipe Scaler State
+  const [originalServings, setOriginalServings] = useState('');
+  const [newServings, setNewServings] = useState('');
+  const [scaledAmount, setScaledAmount] = useState('');
 
   const units = {
-    volume: ["tsp", "tbsp", "fl oz", "cup", "pint", "quart", "gallon", "ml", "liter"],
-    weight: ["oz", "lb", "g", "kg"],
-    temperature: ["F", "C", "K"],
+    volume: ['tsp', 'tbsp', 'fl oz', 'cup', 'pint', 'quart', 'gallon', 'ml', 'liter'],
+    weight: ['oz', 'lb', 'g', 'kg'],
+    temperature: ['F', 'C', 'K'],
   };
 
   const handleConvert = (val: string) => {
@@ -29,7 +30,7 @@ export default function Calculator() {
       const converted = convert(Number(val), fromUnit, toUnit, category);
       setResult(converted.toFixed(2));
     } else {
-      setResult("");
+      setResult('');
     }
   };
 
@@ -44,31 +45,29 @@ export default function Calculator() {
   };
 
   const copyResult = () => {
-    if (result) {
-      navigator.clipboard.writeText(result);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
-    }
+    if (!result) return;
+    navigator.clipboard.writeText(result);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
   };
 
-  // Recipe scaler logic
   const scaleRecipe = () => {
-    if (!originalServings || !newServings) return;
+    if (!originalServings || !newServings || !value) return;
 
-    const ratio = Number(newServings) / Number(originalServings);
+    const newAmount =
+      (Number(value) / Number(originalServings)) * Number(newServings);
 
-    if (value) {
-      setScaledAmount((Number(value) * ratio).toFixed(2));
-    }
+    setScaledAmount(newAmount.toFixed(2));
   };
 
   return (
     <div
-      className="min-h-screen pb-28 page-transition page-bg"
+      className="min-h-screen pb-44 page-transition page-bg"
       style={{ backgroundImage: `url(${BgCalculator})` }}
     >
       <div className="bg-[#1b302c]/30 min-h-screen px-4 py-8">
         <div className="max-w-2xl mx-auto">
+
           <div className="text-center mb-6">
             <h1 className="text-4xl font-bold text-white drop-shadow-lg">Unit Converter</h1>
             <p className="text-white/90 mt-2">Quick & easy kitchen conversions</p>
@@ -76,18 +75,19 @@ export default function Calculator() {
 
           <FloralDivider variant="vine" />
 
-          {/* UNIT CONVERSION FRAME */}
           <DecorativeFrame className="mt-6">
             <div className="parchment-card p-6">
+
+              {/* CATEGORY SELECT */}
               <label className="block mb-4">
                 <span className="text-[#1b302c] font-semibold">Category</span>
                 <select
                   value={category}
                   onChange={(e) => {
                     setCategory(e.target.value);
-                    setResult("");
+                    setResult('');
                   }}
-                  className="w-full mt-2 p-3 border-2 border-[#b8d3d5] rounded-xl bg-[#faf6f0] focus:border-[#3c6150] transition-all"
+                  className="w-full mt-2 p-3 border-2 border-[#b8d3d5] rounded-xl bg-[#faf6f0]"
                 >
                   <option value="volume">Volume</option>
                   <option value="weight">Weight</option>
@@ -95,6 +95,7 @@ export default function Calculator() {
                 </select>
               </label>
 
+              {/* UNIT PICKERS */}
               <div className="grid grid-cols-[1fr_auto_1fr] gap-2 mb-4 items-end">
                 <label>
                   <span className="text-[#1b302c] font-semibold">From</span>
@@ -113,8 +114,7 @@ export default function Calculator() {
 
                 <button
                   onClick={swapUnits}
-                  className="bg-[#a77a72] text-white p-3 rounded-xl hover:bg-[#5f3c43] transition-all hover:scale-110 shadow-md"
-                  title="Swap units"
+                  className="bg-[#a77a72] text-white p-3 rounded-xl hover:bg-[#5f3c43]"
                 >
                   ⇄
                 </button>
@@ -135,6 +135,7 @@ export default function Calculator() {
                 </label>
               </div>
 
+              {/* VALUE INPUT */}
               <input
                 type="number"
                 value={value}
@@ -143,14 +144,16 @@ export default function Calculator() {
                 className="w-full p-4 border-2 border-[#b8d3d5] rounded-xl mb-4 text-lg bg-[#faf6f0]"
               />
 
+              {/* RESULT */}
               {result && (
                 <div className="bg-gradient-to-r from-[#b8d3d5] to-[#a77a72]/50 p-4 rounded-xl flex justify-between items-center shadow-inner">
                   <span className="text-2xl font-bold text-[#1b302c]">
                     {result} {toUnit}
                   </span>
+
                   <button
                     onClick={copyResult}
-                    className="cottagecore-btn bg-[#3c6150] text-white hover:bg-[#5f3c43]"
+                    className="cottagecore-btn bg-[#3c6150] text-white rounded-xl px-3 py-2"
                   >
                     Copy
                   </button>
@@ -159,45 +162,50 @@ export default function Calculator() {
             </div>
           </DecorativeFrame>
 
-          {/* RECIPE SCALER FRAME */}
-          <DecorativeFrame className="mt-10">
+          {/* 🔥 NEW RECIPE SCALER SECTION */}
+          <FloralDivider variant="mushroom" />
+
+          <DecorativeFrame className="mt-6">
             <div className="parchment-card p-6">
-              <h2 className="text-2xl font-bold text-[#1b302c] mb-4 text-center">
+
+              <h2 className="text-xl font-bold text-[#1b302c] mb-3">
                 Recipe Scaler
               </h2>
 
-              <label className="block mb-4">
-                <span className="text-[#1b302c] font-semibold">Original servings</span>
+              <p className="text-[#5f3c43] mb-4">
+                Enter an ingredient amount above, then scale it to any serving size.
+              </p>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 <input
                   type="number"
                   value={originalServings}
                   onChange={(e) => setOriginalServings(e.target.value)}
-                  className="w-full p-3 border-2 border-[#b8d3d5] rounded-xl bg-[#faf6f0]"
+                  placeholder="Original Servings"
+                  className="p-3 border-2 border-[#b8d3d5] rounded-xl bg-[#faf6f0]"
                 />
-              </label>
 
-              <label className="block mb-4">
-                <span className="text-[#1b302c] font-semibold">New servings</span>
                 <input
                   type="number"
                   value={newServings}
                   onChange={(e) => setNewServings(e.target.value)}
-                  className="w-full p-3 border-2 border-[#b8d3d5] rounded-xl bg-[#faf6f0]"
+                  placeholder="New Servings"
+                  className="p-3 border-2 border-[#b8d3d5] rounded-xl bg-[#faf6f0]"
                 />
-              </label>
+              </div>
 
               <button
                 onClick={scaleRecipe}
-                className="w-full mt-2 py-3 bg-[#3c6150] text-white rounded-xl hover:bg-[#5f3c43] transition"
+                className="w-full bg-[#3c6150] text-white py-3 rounded-xl hover:bg-[#5f3c43] transition-all"
               >
                 Scale Recipe
               </button>
 
               {scaledAmount && (
-                <div className="mt-4 bg-[#b8d3d5]/50 p-4 rounded-xl text-center">
-                  <span className="text-xl text-[#1b302c] font-bold">
-                    Scaled amount: {scaledAmount}
-                  </span>
+                <div className="mt-4 bg-gradient-to-r from-[#b8d3d5] to-[#a77a72]/50 p-4 rounded-xl text-center shadow-inner">
+                  <p className="text-[#1b302c] text-lg font-bold">
+                    New Amount: {scaledAmount} {fromUnit}
+                  </p>
                 </div>
               )}
             </div>
@@ -206,8 +214,8 @@ export default function Calculator() {
       </div>
 
       {showToast && (
-        <div className="fixed top-4 right-4 bg-[#3c6150] text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2">
-          ✓ Copied!
+        <div className="fixed top-4 right-4 bg-[#3c6150] text-white px-6 py-3 rounded-xl shadow-lg animate-slide-up">
+          Copied!
         </div>
       )}
     </div>
