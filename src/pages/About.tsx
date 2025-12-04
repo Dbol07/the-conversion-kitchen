@@ -1,12 +1,13 @@
-import React from 'react';
-import FloralDivider from '../components/FloralDivider';
-import DecorativeFrame from '../components/DecorativeFrame';
+import React from "react";
+import FloralDivider from "../components/FloralDivider";
+import DecorativeFrame from "../components/DecorativeFrame";
+import BgAbout from "../assets/backgrounds/bg-about.png";
 
 export default function About() {
   return (
-    <div 
+    <div
       className="min-h-screen pb-28 page-transition page-bg"
-      style={{ backgroundImage: 'url(https://raw.githubusercontent.com/Dbol07/kitchen-conversion-app/main/assets/backgrounds/bg-about.png)' }}
+      style={{ backgroundImage: `url(${BgAbout})` }}
     >
       <div className="bg-[#1b302c]/30 min-h-screen px-4 py-8">
         <div className="max-w-3xl mx-auto">
