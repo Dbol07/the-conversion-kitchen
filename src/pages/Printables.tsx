@@ -1,54 +1,67 @@
-import React from 'react';
-import FloralDivider from '../components/FloralDivider';
-import DecorativeFrame from '../components/DecorativeFrame';
-
-const BASE_URL = 'https://raw.githubusercontent.com/Dbol07/kitchen-conversion-app/main/printables';
+import React from "react";
 
 export default function Printables() {
   const printables = [
-    { title: 'Volume Conversions 1', image: `${BASE_URL}/conversions-volume1.jpg`, desc: 'Basic volume reference' },
-    { title: 'Volume Conversions 2', image: `${BASE_URL}/conversions-volume2.jpg`, desc: 'Extended volume chart' },
-    { title: 'Volume Conversions 3', image: `${BASE_URL}/conversions-volume3.jpg`, desc: 'Metric conversions' },
-    { title: 'Volume Conversions 4', image: `${BASE_URL}/conversions-volume4.jpg`, desc: 'Baking measurements' },
-    { title: 'Volume Conversions 5', image: `${BASE_URL}/conversions-volume5.jpg`, desc: 'Quick reference card' },
+    {
+      title: "Cups Conversion Chart",
+      img: "/printables/printable-cups.jpg",
+      pdf: "/printables/printable-cups.pdf",
+    },
+    {
+      title: "Kitchen Basics Chart",
+      img: "/printables/printable-kitchen.jpg",
+      pdf: "/printables/printable-kitchen.pdf",
+    },
+    {
+      title: "Liquid Conversion Chart",
+      img: "/printables/printable-liquid.jpg",
+      pdf: "/printables/printable-liquid.pdf",
+    },
+    {
+      title: "Oven Temperature Chart",
+      img: "/printables/printable-oven.jpg",
+      pdf: "/printables/printable-oven.pdf",
+    },
+    {
+      title: "Substitution Chart",
+      img: "/printables/printable-subs.jpg",
+      pdf: "/printables/printable-subs.pdf",
+    },
   ];
 
   return (
-    <div 
-      className="min-h-screen pb-28 page-transition page-bg"
-      style={{ backgroundImage: 'url(https://raw.githubusercontent.com/Dbol07/kitchen-conversion-app/main/assets/backgrounds/bg-printables.jpg)' }}
-    >
-      <div className="bg-[#1b302c]/30 min-h-screen px-4 py-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-6">
-            <h1 className="text-4xl font-bold text-white drop-shadow-lg">Printable Charts</h1>
-            <p className="text-white/90 mt-2">Download and print for your kitchen</p>
+    <div className="min-h-screen bg-[#faf6f0] p-4 pb-20">
+      <h1 className="text-3xl font-bold text-center text-[#5f3c43] mb-6">
+        Printables
+      </h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        {printables.map((p) => (
+          <div
+            key={p.title}
+            className="bg-white rounded-xl overflow-hidden shadow-md border border-[#a77a72]/40"
+          >
+            <img
+              src={p.img}
+              alt={p.title}
+              className="w-full h-48 object-cover"
+            />
+
+            <div className="p-4 flex flex-col gap-3">
+              <h2 className="text-lg font-semibold text-[#3c6150]">
+                {p.title}
+              </h2>
+
+              <a
+                href={p.pdf}
+                download
+                className="inline-block text-center bg-[#b8d3d5] text-[#1b302c] px-4 py-2 rounded-lg font-medium hover:bg-[#9bc1c3] transition"
+              >
+                Download PDF
+              </a>
+            </div>
           </div>
-
-          <FloralDivider variant="mushroom" />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-            {printables.map((item, idx) => (
-              <DecorativeFrame key={idx} className="animate-slide-up" style={{ animationDelay: `${idx * 100}ms` }}>
-                <div className="parchment-card overflow-hidden group hover:shadow-2xl transition-all duration-300">
-                  <div className="relative overflow-hidden">
-                    <img src={item.image} alt={item.title} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
-                  </div>
-                  <div className="p-4 bg-[#faf6f0]">
-                    <h3 className="text-lg font-bold text-[#1b302c] mb-1">{item.title}</h3>
-                    <p className="text-[#5f3c43] text-sm mb-3">{item.desc}</p>
-                    <div className="flex gap-2">
-                      <a href={item.image} target="_blank" rel="noopener noreferrer" className="flex-1 cottagecore-btn bg-[#3c6150] text-white text-center text-sm hover:bg-[#5f3c43]">View</a>
-                      <a href={item.image} download className="flex-1 cottagecore-btn bg-[#a77a72] text-white text-center text-sm hover:bg-[#5f3c43]">Download</a>
-                    </div>
-                  </div>
-                </div>
-              </DecorativeFrame>
-            ))}
-          </div>
-
-          <FloralDivider variant="vine" />
-        </div>
+        ))}
       </div>
     </div>
   );
