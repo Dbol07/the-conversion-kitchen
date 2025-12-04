@@ -15,6 +15,10 @@ import Printables from "./pages/Printables";
 import FAQ from "./pages/FAQ";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
+import Recipes from "./pages/Recipes";
+import RecipeDetails from "./pages/RecipeDetails";
+
+
 
 const queryClient = new QueryClient();
 
@@ -33,6 +37,10 @@ const App = () => (
               <Route path="/printables" element={<Printables />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/about" element={<About />} />
+		<Route path="/recipes" element={<Recipes />} />
+		<Route path="/recipes/:id" element={<RecipeDetails />} />
+
+
             </Route>
 
             <Route path="*" element={<NotFound />} />

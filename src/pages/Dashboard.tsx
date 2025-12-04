@@ -116,6 +116,13 @@ export default function Dashboard() {
                   <img src={IconPrint} className="w-10 h-10 mb-2" />
                   <span className="text-sm font-semibold text-[#1b302c]">Printables</span>
                 </Link>
+<Link
+  to="/recipes"
+  className="flex flex-col items-center bg-[#b8d3d5]/20 hover:bg-[#b8d3d5]/40 p-4 rounded-xl transition-all shadow-md"
+>
+  <img src="https://img.icons8.com/color/96/meal.png" className="w-10 h-10 mb-2" />
+  <span className="text-sm font-semibold text-[#1b302c]">Recipes</span>
+</Link>
 
                 <Link
                   to="/faq"
@@ -147,33 +154,73 @@ export default function Dashboard() {
             </div>
           </DecorativeFrame>
 
-          {/* ---------------------------------------------------- */}
-          {/* RECIPE INSPIRATION — NOW CLICKABLE */}
-          {/* ---------------------------------------------------- */}
+{/* ---------------------------------------------------- */}
+{/* RECIPE INSPIRATION — SPOONACULAR PREVIEW */}
+{/* ---------------------------------------------------- */}
 
-          <FloralDivider variant="mushroom" />
+import { useEffect } from "react";
 
-          <DecorativeFrame className="mt-6 mb-10">
-            <div
-              className="parchment-card p-6 cursor-pointer hover:bg-[#b8d3d5]/30 transition-all rounded-xl"
-              onClick={() => navigate("/guide")}
-            >
-              <h2 className="text-xl font-bold text-[#1b302c] mb-2">
-                Cozy Recipe Inspiration
-              </h2>
+const API_KEY = import.meta.env.VITE_SPOONACULAR_KEY;
 
-              <p className="text-[#5f3c43] text-sm mb-4">
-                A little nudge for your next kitchen adventure.
-              </p>
+const [preview, setPreview] = useState<any>(null);
+const [loadingPreview, setLoadingPreview] = useState(true);
 
-              <div className="bg-[#b8d3d5]/40 p-4 rounded-xl shadow-inner">
-                <h3 className="text-lg font-semibold text-[#1b302c] mb-1">
-                  {featuredRecipe.title}
-                </h3>
-                <p className="text-[#5f3c43] text-sm">{featuredRecipe.description}</p>
-              </div>
-            </div>
-          </DecorativeFrame>
+useEffect(() => {
+  async function loadPreview() {
+    try {
+      const res = await fetch(
+        `https://api.spoonacular.com/recipes/random?number=1&apiKey=${API_KEY}`
+      );
+      const data = await res.json();
+      setPreview(data.recipes?.[0] || null);
+    } catch (err) {
+      console.error("Failed to load recipe preview:", err);
+    }
+    setLoadingPreview(false);
+  }
+
+  loadPreview();
+}, []);
+
+<FloralDivider variant="mushroom" />
+
+<DecorativeFrame className="mt-6 mb-10">
+  <div
+    className="parchment-card p-6 cursor-pointer hover:bg-[#b8d3d5]/30 transition-all rounded-xl"
+    onClick={() => navigate("/recipes")}
+  >
+    <h2 className="text-xl font-bold text-[#1b302c] mb-2">
+      Cozy Recipe Inspiration
+    </h2>
+
+    <p className="text-[#5f3c43] text-sm mb-4">
+      A little nudge for your next kitchen adventure.
+    </p>
+
+    {loadingPreview && (
+      <p className="text-[#5f3c43] italic">Loading recipe…</p>
+    )}
+
+    {preview && (
+      <div className="bg-[#b8d3d5]/40 p-4 rounded-xl shadow-inner">
+        <img
+          src={preview.image}
+          alt={preview.title}
+          className="rounded-xl shadow-md mb-2"
+        />
+
+        <h3 className="text-lg font-semibold text-[#1b302c] mb-1">
+          {preview.title}
+        </h3>
+
+        <p className="text-[#5f3c43] text-sm">
+          Tap to explore more cozy recipes
+        </p>
+      </div>
+    )}
+  </div>
+</DecorativeFrame>
+
         </div>
       </div>
     </div>
