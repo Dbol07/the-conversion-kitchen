@@ -1,0 +1,40 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cozy Kitchen Companion - Kitchen Conversion PWA</title>
+    <meta name="description" content="Your cozy guide to kitchen conversions and measurements. A beautiful cottagecore PWA for cooking and baking." />
+    <link rel="icon" type="image/svg+xml" href="/placeholder.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#b8d3d5" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+
+    <meta property="og:title" content="Cottagecore Kitchen Converter" />
+    <meta property="og:description" content="A whimsical kitchen conversion app with a cozy cottagecore aesthetic, offering easy measurement conversions and printable charts." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/og.jpg" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="/og.jpg" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(reg => console.log('Service Worker registered'))
+            .catch(err => console.log('Service Worker registration failed'));
+        });
+      }
+    </script>
+
+  </body>
+</html>
