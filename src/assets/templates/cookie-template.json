@@ -1,17 +1,27 @@
 {
-  "name": "Cozy Cottage Cookies",
+  "name": "Cookies",
   "servings": 24,
   "ingredients": [
-    { "item": "Flour", "us": "2 cups", "metric": "240 g" },
-    { "item": "Butter", "us": "1 cup", "metric": "227 g" },
-    { "item": "Sugar", "us": "1 cup", "metric": "200 g" },
-    { "item": "Eggs", "us": "2 large", "metric": "2 large" },
-    { "item": "Vanilla", "us": "1 tsp", "metric": "5 ml" }
+    "2 1/4 cups all-purpose flour",
+    "1 tsp baking soda",
+    "1 cup butter, softened",
+    "3/4 cup granulated sugar",
+    "3/4 cup packed brown sugar",
+    "2 eggs",
+    "2 cups chocolate chips"
   ],
   "instructions": [
-    "Cream butter and sugar.",
-    "Add eggs and vanilla.",
-    "Fold in flour.",
-    "Bake at 350°F (175°C) for 10–12 minutes."
-  ]
+    "Preheat the oven to 350°F (175°C).",
+    "Cream together butter and sugars.",
+    "Beat in eggs one at a time.",
+    "Combine dry ingredients and mix into wet mixture.",
+    "Fold in chocolate chips.",
+    "Bake for 8–10 minutes."
+  ],
+  "calculator": {
+    "amount": "1",
+    "fromUnit": "cups",
+    "toUnit": "grams",
+    "ingredient": "flour"
+  }
 }

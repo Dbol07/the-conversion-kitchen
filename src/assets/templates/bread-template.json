@@ -1,19 +1,25 @@
 {
-  "name": "Homestyle Cottage Bread",
-  "servings": 12,
+  "name": "Bread",
+  "servings": 8,
   "ingredients": [
-    { "item": "Bread Flour", "us": "3 1/2 cups", "metric": "420 g" },
-    { "item": "Warm Water", "us": "1 1/4 cups", "metric": "300 ml" },
-    { "item": "Yeast", "us": "2 1/4 tsp", "metric": "7 g" },
-    { "item": "Salt", "us": "2 tsp", "metric": "10 g" },
-    { "item": "Sugar", "us": "1 tbsp", "metric": "12 g" },
-    { "item": "Butter", "us": "2 tbsp", "metric": "28 g" }
+    "3 cups bread flour",
+    "1 1/4 cups warm water",
+    "2 1/4 tsp yeast",
+    "1 tsp salt",
+    "1 tbsp sugar"
   ],
   "instructions": [
-    "In a bowl, combine warm water, sugar, and yeast. Let bloom for 5–10 minutes.",
-    "Stir in flour, salt, and softened butter. Knead until smooth.",
-    "Cover and rise 1 hour.",
-    "Shape into a loaf, place into pan, and rise 30 minutes.",
-    "Bake at 375°F (190°C) for 28–32 minutes until golden and hollow-sounding."
-  ]
+    "Activate yeast in warm water with sugar.",
+    "Mix flour and salt.",
+    "Combine wet and dry ingredients.",
+    "Knead for 8–10 minutes.",
+    "Let rise for 1 hour.",
+    "Bake at 375°F (190°C) for 25–30 minutes."
+  ],
+  "calculator": {
+    "amount": "3",
+    "fromUnit": "cups",
+    "toUnit": "grams",
+    "ingredient": "bread flour"
+  }
 }
