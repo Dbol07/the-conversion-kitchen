@@ -1,125 +1,195 @@
+import PageDivider from "@/components/PageDivider";
+import getDividerForPage from "@/lib/dividers";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { convertLocally } from "@/lib/unitConversion";
 import calculatorBanner from "@/assets/banners/calculator-banner.png";
 
-// Auto-import template JSON files
+// Auto-import recipe templates
 const templates = import.meta.glob("/src/assets/templates/*-template.json", {
   eager: true,
   import: "default",
 }) as Record<string, any>;
 
+// Full unit list
+const UNIT_OPTIONS = [
+  "cups", "tbsp", "tsp",
+  "ml", "l",
+  "g", "kg",
+  "oz", "lb",
+  "fl oz",
+  "C", "F",
+];
+
+/* ---------------------------------------------------------
+   TYPE — Bulk Ingredient Row
+--------------------------------------------------------- */
+type IngredientRow = {
+  ingredient: string;
+  amount: string;
+  unit: string;
+  result?: string;
+};
+
 export default function CalculatorPage() {
   const location = useLocation();
 
+  /* ---------------------------------------------------------
+     CORE CALCULATOR STATE
+  --------------------------------------------------------- */
   const [amount, setAmount] = useState("");
   const [fromUnit, setFromUnit] = useState("cups");
   const [toUnit, setToUnit] = useState("grams");
   const [ingredient, setIngredient] = useState("");
-
-  const [ingredientList, setIngredientList] = useState<
-    { name: string; amount: string }[]
-  >([]);
-
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  /* ----------------------------------------------------
-     1. TEMPLATE AUTO-LOAD (from TemplatePreview → Calculator)
-  ---------------------------------------------------- */
+  /* ---------------------------------------------------------
+     BULK INGREDIENT MODE
+  --------------------------------------------------------- */
+  const [rows, setRows] = useState<IngredientRow[]>([]);
+  const bulkMode = rows.length > 0;
+
+  /* ---------------------------------------------------------
+     1. Detect bulk ingredient mode (?ingredients=)
+  --------------------------------------------------------- */
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const name = params.get("template");
-    const ingString = params.get("ingredients");
+    const raw = params.get("ingredients");
 
-    // ---------------------------
-    // TEMPLATE LOADING
-    // ---------------------------
-    if (name) {
-      const match = Object.entries(templates).find(([path]) =>
-        path.toLowerCase().includes(`${name}-template.json`)
-      );
+    if (!raw) return;
 
-      if (match) {
-        const template = match[1];
-        if (template.amount) setAmount(String(template.amount));
-        if (template.fromUnit) setFromUnit(template.fromUnit);
-        if (template.toUnit) setToUnit(template.toUnit);
-        if (template.ingredient) setIngredient(template.ingredient);
+    // Example format: "flour:2 cups;sugar:1/2 cup"
+    const parsed = raw.split(";").map((pair) => {
+      const [name, fullAmount = ""] = pair.split(":");
+      const parts = fullAmount.trim().split(" ");
 
-        setResult(null);
-        setError(null);
-      }
-    }
+      let amount = parts[0] ?? "";
+      let unit = parts[1] ?? "g"; // default safe
 
-    // ---------------------------
-    // INGREDIENT LIST (from RecipeDetails)
-    // ---------------------------
-    if (ingString) {
-      const parsed = ingString.split(";").map((pair) => {
-        const [name, amount] = pair.split(":");
-        return { name, amount };
-      });
-      setIngredientList(parsed);
+      return {
+        ingredient: name?.trim() || "",
+        amount,
+        unit,
+        result: "",
+      };
+    });
+
+    if (parsed.length > 0) {
+      setRows(parsed);
     }
   }, [location.search]);
 
-  /* ----------------------------------------------------
-     2. SMART HYBRID CONVERSION (Local → Wolfram)
-  ---------------------------------------------------- */
-  async function smartConvert() {
-    setLoading(true);
-    setError(null);
+  /* ---------------------------------------------------------
+     2. Template auto-load (from TemplatePreview)
+  --------------------------------------------------------- */
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const name = params.get("template");
+    if (!name) return;
+
+    const match = Object.entries(templates).find(([path]) =>
+      path.toLowerCase().includes(`${name}-template.json`)
+    );
+
+    if (!match) return;
+    const template = match[1];
+
+    if (template.amount) setAmount(String(template.amount));
+    if (template.fromUnit) setFromUnit(template.fromUnit);
+    if (template.toUnit) setToUnit(template.toUnit);
+    if (template.ingredient) setIngredient(template.ingredient);
+
     setResult(null);
+    setError(null);
+  }, [location.search]);
 
-    try {
-      // LOCAL conversion (no ingredient → unit-only)
-      if (!ingredient) {
-        const local = convertLocally(amount, fromUnit, toUnit);
-        if (local.ok) {
-          const rounded = Math.round(local.value * 100) / 100;
-          setResult(`${rounded} ${toUnit}`);
-          setLoading(false);
-          return;
-        }
+  /* ---------------------------------------------------------
+     3. Local → Wolfram smart conversion
+  --------------------------------------------------------- */
+  async function smartConvertSingle(amount: string, from: string, to: string, ing: string) {
+    // Try local (only when ingredient empty)
+    if (!ing) {
+      const local = convertLocally(amount, from, to);
+      if (local.ok) {
+        const rounded = Math.round(local.value * 100) / 100;
+        return `${rounded} ${to}`;
       }
+    }
 
-      // Wolfram Alpha fallback (ingredient needed)
-      const query = `convert ${amount} ${ingredient || ""} from ${fromUnit} to ${toUnit}`.trim();
+    // Wolfram fallback
+    const query = `convert ${amount} ${ing || ""} from ${from} to ${to}`.trim();
 
-      const res = await fetch("/api/wolfram", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
-      });
+    const response = await fetch("/api/wolfram", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
 
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error();
+    const data = await response.json();
+    if (!data.ok || !response.ok) {
+      throw new Error(data.error || "Conversion failed");
+    }
+    return data.resultText;
+  }
 
-      setResult(data.resultText);
-    } catch {
+  /* ---------------------------------------------------------
+     4. Single conversion button
+  --------------------------------------------------------- */
+  async function smartConvert() {
+    try {
+      setLoading(true);
+      setError(null);
+      setResult(null);
+
+      const output = await smartConvertSingle(amount, fromUnit, toUnit, ingredient);
+      setResult(output);
+
+    } catch (err) {
       setError("Sorry, I couldn’t convert that.");
     } finally {
       setLoading(false);
     }
   }
 
-  /* ----------------------------------------------------
-     3. COPY RESULT
-  ---------------------------------------------------- */
-  function copyResult() {
-    if (!result) return;
-    navigator.clipboard.writeText(result);
+  /* ---------------------------------------------------------
+     5. BULK conversion (Convert All Ingredients)
+  --------------------------------------------------------- */
+  async function convertAllRows() {
+    setLoading(true);
+    try {
+      const newRows = await Promise.all(
+        rows.map(async (row) => {
+          try {
+            const out = await smartConvertSingle(row.amount, row.unit, "g", row.ingredient);
+            return { ...row, result: out };
+          } catch {
+            return { ...row, result: "Conversion failed" };
+          }
+        })
+      );
+      setRows(newRows);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  /* ----------------------------------------------------
-     4. UI — Cottagecore Style
-  ---------------------------------------------------- */
+  /* ---------------------------------------------------------
+     6. Copy all results
+  --------------------------------------------------------- */
+  function copyAll() {
+    const text = rows.map((r) => `${r.ingredient}: ${r.result}`).join("\n");
+    navigator.clipboard.writeText(text);
+  }
+
+  /* ---------------------------------------------------------
+     7. UI — Cottagecore layout
+  --------------------------------------------------------- */
   return (
     <div className="calculator-page max-w-3xl mx-auto px-4 pb-16">
 
-      {/* ⭐ BANNER */}
+      {/* Banner */}
       <div className="w-full mb-6">
         <img
           src={calculatorBanner}
@@ -128,143 +198,191 @@ export default function CalculatorPage() {
         />
       </div>
 
+{/* PAGE DIVIDER */}
+<div className="flex justify-center my-6">
+  <PageDivider src={getDividerForPage("calculator")} />
+</div>
+
       <div className="bg-[#fffdf7]/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-[#e4d5b8]">
 
-        <h1 className="text-3xl font-bold mb-6 text-center text-[#4b3b2f]">
-          Kitchen Conversion Calculator
-        </h1>
+        {/* ---------------------------------------------------------
+           BULK INGREDIENT MODE
+        --------------------------------------------------------- */}
+        {bulkMode && (
+          <>
+            <h1 className="text-3xl font-bold mb-4 text-center text-[#4b3b2f]">
+              Convert Recipe Ingredients
+            </h1>
 
-        {/* ⭐ INGREDIENT LIST FROM RECIPE DETAILS */}
-        {ingredientList.length > 0 && (
-          <div className="mb-6 p-4 bg-white/80 rounded-xl shadow border border-[#d6c6a9]">
-            <p className="font-semibold mb-2 text-[#4b3b2f]">
-              Choose an ingredient to convert:
-            </p>
+            {rows.map((row, i) => (
+              <div key={i} className="mb-4 p-4 bg-white rounded-xl shadow border">
+                <div className="grid grid-cols-3 gap-3">
 
-            <div className="space-y-2">
-              {ingredientList.map((ing, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    // Attempt to split "amount + unit"
-                    const parts = ing.amount.split(" ");
-                    const amt = parts.shift() || "";
-                    const unit = parts.join(" ");
+                  {/* Ingredient */}
+                  <input
+                    type="text"
+                    value={row.ingredient}
+                    onChange={(e) => {
+                      const copy = [...rows];
+                      copy[i].ingredient = e.target.value;
+                      setRows(copy);
+                    }}
+                    className="p-2 border rounded"
+                  />
 
-                    setAmount(amt);
-                    setFromUnit(unit);
-                    setIngredient(ing.name);
-                  }}
-                  className="w-full text-left px-4 py-2 bg-emerald-100 hover:bg-emerald-200 rounded-lg shadow transition font-medium text-[#3c4b39]"
-                >
-                  <span className="capitalize">{ing.name}</span> — {ing.amount}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+                  {/* Amount */}
+                  <input
+                    type="text"
+                    value={row.amount}
+                    onChange={(e) => {
+                      const copy = [...rows];
+                      copy[i].amount = e.target.value;
+                      setRows(copy);
+                    }}
+                    className="p-2 border rounded"
+                  />
 
-        {/* Amount */}
-        <div className="mb-4 text-left">
-          <label className="block mb-1 font-semibold text-[#4b3b2f]">Amount</label>
-          <input
-            type="text"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="e.g. 1 1/2"
-            className="w-full p-3 border rounded-xl bg-white shadow-sm"
-          />
-        </div>
+                  {/* Unit */}
+                  <select
+                    value={row.unit}
+                    onChange={(e) => {
+                      const copy = [...rows];
+                      copy[i].unit = e.target.value;
+                      setRows(copy);
+                    }}
+                    className="p-2 border rounded"
+                  >
+                    {UNIT_OPTIONS.map((u) => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </select>
+                </div>
 
-        {/* From Unit */}
-        <div className="mb-4 text-left">
-          <label className="block mb-1 font-semibold text-[#4b3b2f]">From Unit</label>
-          <select
-            value={fromUnit}
-            onChange={(e) => setFromUnit(e.target.value)}
-            className="w-full p-3 border rounded-xl bg-white shadow-sm"
-          >
-            <option value="cups">Cups</option>
-            <option value="tbsp">Tablespoons</option>
-            <option value="tsp">Teaspoons</option>
-            <option value="ml">Milliliters</option>
-            <option value="l">Liters</option>
-            <option value="oz">Ounces</option>
-            <option value="g">Grams</option>
-            <option value="kg">Kilograms</option>
-            <option value="fl oz">Fluid Ounces</option>
-            <option value="lb">Pounds</option>
-            <option value="C">Celsius</option>
-            <option value="F">Fahrenheit</option>
-          </select>
-        </div>
-
-        {/* To Unit */}
-        <div className="mb-4 text-left">
-          <label className="block mb-1 font-semibold text-[#4b3b2f]">To Unit</label>
-          <select
-            value={toUnit}
-            onChange={(e) => setToUnit(e.target.value)}
-            className="w-full p-3 border rounded-xl bg-white shadow-sm"
-          >
-            <option value="grams">Grams</option>
-            <option value="g">Grams (g)</option>
-            <option value="kg">Kilograms</option>
-            <option value="oz">Ounces</option>
-            <option value="cups">Cups</option>
-            <option value="tbsp">Tablespoons</option>
-            <option value="tsp">Teaspoons</option>
-            <option value="ml">Milliliters</option>
-            <option value="l">Liters</option>
-            <option value="fl oz">Fluid Ounces</option>
-            <option value="lb">Pounds</option>
-            <option value="C">Celsius</option>
-            <option value="F">Fahrenheit</option>
-          </select>
-        </div>
-
-        {/* Ingredient */}
-        <div className="mb-4 text-left">
-          <label className="block mb-1 font-semibold text-[#4b3b2f]">
-            Ingredient (optional — required for cups→grams)
-          </label>
-          <input
-            type="text"
-            value={ingredient}
-            onChange={(e) => setIngredient(e.target.value)}
-            placeholder="e.g. flour, sugar, butter…"
-            className="w-full p-3 border rounded-xl bg-white shadow-sm"
-          />
-        </div>
-
-        {/* Convert Button */}
-        <button
-          onClick={smartConvert}
-          disabled={loading}
-          className="w-full bg-emerald-700 text-white py-3 rounded-xl shadow-md hover:bg-emerald-800 transition disabled:opacity-50"
-        >
-          {loading ? "Converting…" : "Convert"}
-        </button>
-
-        {/* Result */}
-        {result && (
-          <div className="mt-6 p-4 bg-white/80 rounded-xl shadow flex justify-between items-center border">
-            <p className="font-semibold text-lg text-[#4b3b2f]">{result}</p>
+                {row.result && (
+                  <p className="mt-2 font-semibold text-[#4b3b2f]">
+                    → {row.result}
+                  </p>
+                )}
+              </div>
+            ))}
 
             <button
-              onClick={copyResult}
-              className="px-4 py-2 bg-amber-200 hover:bg-amber-300 rounded-lg shadow text-[#4b3b2f]"
+              onClick={convertAllRows}
+              disabled={loading}
+              className="w-full bg-emerald-700 text-white py-3 rounded-xl shadow hover:bg-emerald-800 transition"
             >
-              Copy
+              {loading ? "Converting…" : "Convert All Ingredients"}
             </button>
-          </div>
+
+            {rows.some((r) => r.result) && (
+              <button
+                onClick={copyAll}
+                className="w-full mt-3 bg-amber-200 hover:bg-amber-300 text-[#4b3b2f] py-3 rounded-xl shadow"
+              >
+                Copy All Results
+              </button>
+            )}
+
+            <div className="h-6" />
+          </>
         )}
 
-        {/* Error */}
-        {error && (
-          <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-xl">
-            {error}
-          </div>
+        {/* ---------------------------------------------------------
+           SINGLE CONVERSION MODE
+        --------------------------------------------------------- */}
+        {!bulkMode && (
+          <>
+            <h1 className="text-3xl font-bold mb-6 text-center text-[#4b3b2f]">
+              Kitchen Conversion Calculator
+            </h1>
+
+            {/* Amount */}
+            <div className="mb-4 text-left">
+              <label className="block mb-1 font-semibold text-[#4b3b2f]">Amount</label>
+              <input
+                type="text"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="e.g. 1 1/2"
+                className="w-full p-3 border rounded-xl bg-white shadow-sm"
+              />
+            </div>
+
+            {/* From */}
+            <div className="mb-4 text-left">
+              <label className="block mb-1 font-semibold text-[#4b3b2f]">
+                From Unit
+              </label>
+              <select
+                value={fromUnit}
+                onChange={(e) => setFromUnit(e.target.value)}
+                className="w-full p-3 border rounded-xl bg-white shadow-sm"
+              >
+                {UNIT_OPTIONS.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* To */}
+            <div className="mb-4 text-left">
+              <label className="block mb-1 font-semibold text-[#4b3b2f]">
+                To Unit
+              </label>
+              <select
+                value={toUnit}
+                onChange={(e) => setToUnit(e.target.value)}
+                className="w-full p-3 border rounded-xl bg-white shadow-sm"
+              >
+                {UNIT_OPTIONS.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Ingredient */}
+            <div className="mb-4 text-left">
+              <label className="block mb-1 font-semibold text-[#4b3b2f]">
+                Ingredient (optional — required for cups→grams)
+              </label>
+              <input
+                type="text"
+                value={ingredient}
+                onChange={(e) => setIngredient(e.target.value)}
+                className="w-full p-3 border rounded-xl bg-white shadow-sm"
+              />
+            </div>
+
+            {/* Convert */}
+            <button
+              onClick={smartConvert}
+              disabled={loading}
+              className="w-full bg-emerald-700 text-white py-3 rounded-xl shadow hover:bg-emerald-800 transition disabled:opacity-50"
+            >
+              {loading ? "Converting…" : "Convert"}
+            </button>
+
+            {/* Result */}
+            {result && (
+              <div className="mt-6 p-4 bg-white/80 rounded-xl shadow flex justify-between items-center border">
+                <p className="font-semibold text-lg text-[#4b3b2f]">{result}</p>
+
+                <button
+                  onClick={() => navigator.clipboard.writeText(result)}
+                  className="px-4 py-2 bg-amber-200 hover:bg-amber-300 rounded-lg shadow text-[#4b3b2f]"
+                >
+                  Copy
+                </button>
+              </div>
+            )}
+
+            {/* Error */}
+            {error && (
+              <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-xl">
+                {error}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
