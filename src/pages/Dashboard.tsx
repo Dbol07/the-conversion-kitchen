@@ -6,13 +6,13 @@ import cakeThumb from "@/assets/templates/cake-template-thumb.png";
 import breadThumb from "@/assets/templates/bread-template-thumb.png";
 
 // Icons
-import iconHome from "@/assets/icons/nav-home.png";
-import iconCalc from "@/assets/icons/nav-calculator.png";
-import iconGuide from "@/assets/icons/nav-guide.png";
-import iconRecipes from "@/assets/icons/nav-recipes.png";
-import iconPrint from "@/assets/icons/nav-printables.png";
-import iconAbout from "@/assets/icons/nav-about.png";
-import iconFaq from "@/assets/icons/nav-faq.png";
+import iconHome from "@/assets/icons/nav/nav-home.png";
+import iconCalc from "@/assets/icons/nav/nav-calculator.png";
+import iconGuide from "@/assets/icons/nav/nav-guide.png";
+import iconRecipes from "@/assets/icons/nav/nav-recipes.png";
+import iconPrint from "@/assets/icons/nav/nav-printables.png";
+import iconAbout from "@/assets/icons/nav/nav-about.png";
+import iconFaq from "@/assets/icons/nav/nav-faq.png";
 
 // Divider image
 import divider from "@/assets/dividers/vine-divider.png";
