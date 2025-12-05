@@ -1,0 +1,17 @@
+{
+  "name": "Cozy Cottage Cookies",
+  "servings": 24,
+  "ingredients": [
+    { "item": "Flour", "us": "2 cups", "metric": "240 g" },
+    { "item": "Butter", "us": "1 cup", "metric": "227 g" },
+    { "item": "Sugar", "us": "1 cup", "metric": "200 g" },
+    { "item": "Eggs", "us": "2 large", "metric": "2 large" },
+    { "item": "Vanilla", "us": "1 tsp", "metric": "5 ml" }
+  ],
+  "instructions": [
+    "Cream butter and sugar.",
+    "Add eggs and vanilla.",
+    "Fold in flour.",
+    "Bake at 350°F (175°C) for 10–12 minutes."
+  ]
+}

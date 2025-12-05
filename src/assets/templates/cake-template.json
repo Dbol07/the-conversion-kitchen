@@ -1,0 +1,20 @@
+{
+  "name": "Cozy Cottage Cake",
+  "servings": 8,
+  "ingredients": [
+    { "item": "Flour", "us": "2 cups", "metric": "240 g" },
+    { "item": "Sugar", "us": "1 1/2 cups", "metric": "300 g" },
+    { "item": "Butter", "us": "1 cup", "metric": "227 g" },
+    { "item": "Eggs", "us": "3 large", "metric": "3 large" },
+    { "item": "Milk", "us": "1 cup", "metric": "240 ml" },
+    { "item": "Baking Powder", "us": "2 tsp", "metric": "8 g" },
+    { "item": "Vanilla Extract", "us": "2 tsp", "metric": "10 ml" }
+  ],
+  "instructions": [
+    "Preheat oven to 350°F (175°C). Grease an 8-inch cake pan.",
+    "Cream butter and sugar until fluffy.",
+    "Add eggs one at a time, mixing well, then stir in vanilla.",
+    "Whisk together dry ingredients and alternate adding with milk.",
+    "Pour into pan and bake for 28–32 minutes or until a toothpick comes out clean."
+  ]
+}
