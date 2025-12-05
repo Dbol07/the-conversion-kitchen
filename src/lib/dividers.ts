@@ -1,25 +1,57 @@
-// Divider registry — every page pulls from here automatically
+// src/lib/dividers.ts
 
-export type DividerVariant =
-  | "default"
-  | "vine"
-  | "vine-light"
-  | "mushroom"
-  | "mushroom-wide"
-  | "floral"
-  | "floral-thin"
-  | "flower";
+// Auto-import ALL divider images inside /src/assets/dividers
+const dividerModules = import.meta.glob("/src/assets/dividers/*", {
+  eager: true,
+  import: "default",
+});
 
-export const dividerMap: Record<DividerVariant, string> = {
-  default: new URL("@/assets/dividers/divider-vine.png", import.meta.url).href,
-  vine: new URL("@/assets/dividers/divider-vine.png", import.meta.url).href,
-  "vine-light": new URL("@/assets/dividers/divider-vine-light.png", import.meta.url).href,
+// Convert imported modules into a usable array of URLs
+const ALL_DIVIDERS: string[] = Object.values(dividerModules) as string[];
 
-  mushroom: new URL("@/assets/dividers/divider-mushroom.png", import.meta.url).href,
-  "mushroom-wide": new URL("@/assets/dividers/divider-mushroom-wide.png", import.meta.url).href,
+// Safety: ensure we have at least 1 divider to avoid crashes
+if (ALL_DIVIDERS.length === 0) {
+  console.warn("[Divider System] No divider images found in /src/assets/dividers/");
+}
 
-  floral: new URL("@/assets/dividers/divider-floral.png", import.meta.url).href,
-  "floral-thin": new URL("@/assets/dividers/divider-floral-thin.png", import.meta.url).href,
+/* -------------------------------------------------
+   PAGE-SPECIFIC MAPPINGS (OPTIONAL)
+-------------------------------------------------- */
 
-  flower: new URL("@/assets/dividers/divider-flower.png", import.meta.url).href,
+const PAGE_MAPPINGS: Record<string, string[]> = {
+  dashboard: ALL_DIVIDERS,
+  calculator: ALL_DIVIDERS,
+  recipes: ALL_DIVIDERS,
+  recipeDetails: ALL_DIVIDERS,
+  printables: ALL_DIVIDERS,
+  guide: ALL_DIVIDERS,
+  faq: ALL_DIVIDERS,
+  about: ALL_DIVIDERS,
 };
+
+/* -------------------------------------------------
+   RANDOM PICKER
+-------------------------------------------------- */
+
+export function randomDivider(): string {
+  if (ALL_DIVIDERS.length === 0) return "";
+  const idx = Math.floor(Math.random() * ALL_DIVIDERS.length);
+  return ALL_DIVIDERS[idx];
+}
+
+/* -------------------------------------------------
+   MAIN EXPORT: getDividerForPage
+-------------------------------------------------- */
+
+export function getDividerForPage(page: string): string {
+  const key = page.toLowerCase().trim();
+
+  // Use mapped list if exists, otherwise random
+  const list = PAGE_MAPPINGS[key];
+  if (list && list.length > 0) {
+    const idx = Math.floor(Math.random() * list.length);
+    return list[idx];
+  }
+
+  return randomDivider();
+}
