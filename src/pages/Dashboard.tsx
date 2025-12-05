@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import cookieThumb from "@/assets/cookie-template-thumb.png";
-import cakeThumb from "@/assets/cake-template-thumb.png";
-import breadThumb from "@/assets/bread-template-thumb.png";
+import cookieThumb from "@/assets/templates/cookie-template-thumb.png";
+import cakeThumb from "@/assets/templates/cake-template-thumb.png";
+import breadThumb from "@/assets/templates/bread-template-thumb.png";
+
 
 export default function Dashboard() {
   return (
