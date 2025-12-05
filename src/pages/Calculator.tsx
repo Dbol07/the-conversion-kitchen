@@ -16,6 +16,11 @@ export default function CalculatorPage() {
   const [fromUnit, setFromUnit] = useState("cups");
   const [toUnit, setToUnit] = useState("grams");
   const [ingredient, setIngredient] = useState("");
+
+  const [ingredientList, setIngredientList] = useState<
+    { name: string; amount: string }[]
+  >([]);
+
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,23 +31,38 @@ export default function CalculatorPage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const name = params.get("template");
-    if (!name) return;
+    const ingString = params.get("ingredients");
 
-    const match = Object.entries(templates).find(([path]) =>
-      path.toLowerCase().includes(`${name}-template.json`)
-    );
+    // ---------------------------
+    // TEMPLATE LOADING
+    // ---------------------------
+    if (name) {
+      const match = Object.entries(templates).find(([path]) =>
+        path.toLowerCase().includes(`${name}-template.json`)
+      );
 
-    if (!match) return;
+      if (match) {
+        const template = match[1];
+        if (template.amount) setAmount(String(template.amount));
+        if (template.fromUnit) setFromUnit(template.fromUnit);
+        if (template.toUnit) setToUnit(template.toUnit);
+        if (template.ingredient) setIngredient(template.ingredient);
 
-    const template = match[1];
+        setResult(null);
+        setError(null);
+      }
+    }
 
-    if (template.amount) setAmount(String(template.amount));
-    if (template.fromUnit) setFromUnit(template.fromUnit);
-    if (template.toUnit) setToUnit(template.toUnit);
-    if (template.ingredient) setIngredient(template.ingredient);
-
-    setResult(null);
-    setError(null);
+    // ---------------------------
+    // INGREDIENT LIST (from RecipeDetails)
+    // ---------------------------
+    if (ingString) {
+      const parsed = ingString.split(";").map((pair) => {
+        const [name, amount] = pair.split(":");
+        return { name, amount };
+      });
+      setIngredientList(parsed);
+    }
   }, [location.search]);
 
   /* ----------------------------------------------------
@@ -54,7 +74,7 @@ export default function CalculatorPage() {
     setResult(null);
 
     try {
-      // LOCAL conversion when ingredient is empty
+      // LOCAL conversion (no ingredient → unit-only)
       if (!ingredient) {
         const local = convertLocally(amount, fromUnit, toUnit);
         if (local.ok) {
@@ -65,24 +85,20 @@ export default function CalculatorPage() {
         }
       }
 
-      // Wolfram Alpha fallback — improved natural language query
+      // Wolfram Alpha fallback (ingredient needed)
       const query = `convert ${amount} ${ingredient || ""} from ${fromUnit} to ${toUnit}`.trim();
 
-      const response = await fetch("/api/wolfram", {
+      const res = await fetch("/api/wolfram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
       });
 
-      const data = await response.json();
-
-      if (!data.ok || !response.ok) {
-        throw new Error(data.error || "Conversion failed");
-      }
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error();
 
       setResult(data.resultText);
-
-    } catch (err) {
+    } catch {
       setError("Sorry, I couldn’t convert that.");
     } finally {
       setLoading(false);
@@ -117,6 +133,36 @@ export default function CalculatorPage() {
         <h1 className="text-3xl font-bold mb-6 text-center text-[#4b3b2f]">
           Kitchen Conversion Calculator
         </h1>
+
+        {/* ⭐ INGREDIENT LIST FROM RECIPE DETAILS */}
+        {ingredientList.length > 0 && (
+          <div className="mb-6 p-4 bg-white/80 rounded-xl shadow border border-[#d6c6a9]">
+            <p className="font-semibold mb-2 text-[#4b3b2f]">
+              Choose an ingredient to convert:
+            </p>
+
+            <div className="space-y-2">
+              {ingredientList.map((ing, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    // Attempt to split "amount + unit"
+                    const parts = ing.amount.split(" ");
+                    const amt = parts.shift() || "";
+                    const unit = parts.join(" ");
+
+                    setAmount(amt);
+                    setFromUnit(unit);
+                    setIngredient(ing.name);
+                  }}
+                  className="w-full text-left px-4 py-2 bg-emerald-100 hover:bg-emerald-200 rounded-lg shadow transition font-medium text-[#3c4b39]"
+                >
+                  <span className="capitalize">{ing.name}</span> — {ing.amount}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Amount */}
         <div className="mb-4 text-left">

@@ -6,38 +6,109 @@ import { Link } from "react-router-dom";
 
 const API_KEY = import.meta.env.VITE_SPOONACULAR_KEY;
 
+// ---------------------------
+// Cute Cottagecore Filter Lists
+// ---------------------------
+
+const CUISINE_TAGS = [
+  { id: "italian", label: "🍝 Italian" },
+  { id: "mediterranean", label: "🥗 Mediterranean" },
+  { id: "asian", label: "🍚 Asian" },
+  { id: "american", label: "🍯 Homestyle" },
+];
+
+const DIET_TAGS = [
+  { id: "vegetarian", label: "🌱 Vegetarian" },
+  { id: "vegan", label: "🌿 Vegan" },
+  { id: "gluten free", label: "✨ Gluten Free" },
+  { id: "ketogenic", label: "🔥 Keto" },
+  { id: "paleo", label: "🦴 Paleo" },
+];
+
+const TIME_TAGS = [
+  { id: "15", label: "⏱ 15 min" },
+  { id: "30", label: "⏱ 30 min" },
+  { id: "45", label: "⏱ 45 min" },
+];
+
+// Cozy baking keywords
+const BAKING_KEYWORDS = [
+  "cake",
+  "cookie",
+  "brownie",
+  "pie",
+  "muffin",
+  "bread",
+  "tart",
+  "cupcake",
+  "scone",
+  "pastry",
+];
+
+// ---------------------------
+// Component
+// ---------------------------
+
 export default function Recipes() {
   const [recipes, setRecipes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  const [cuisine, setCuisine] = useState("");
-  const [diet, setDiet] = useState("");
-  const [maxTime, setMaxTime] = useState<number | "">("");
+  const [activeCuisines, setActiveCuisines] = useState<string[]>([]);
+  const [activeDiets, setActiveDiets] = useState<string[]>([]);
+  const [activeTimes, setActiveTimes] = useState<string[]>([]);
+  const [bakingOnly, setBakingOnly] = useState(false);
 
-  useEffect(() => {
-    fetchRecipes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // ---------------------------
+  // Toggle helpers
+  // ---------------------------
+  function toggleItem(list: string[], setter: (v: string[]) => void, id: string) {
+    if (list.includes(id)) {
+      setter(list.filter((x) => x !== id));
+    } else {
+      setter([...list, id]);
+    }
+  }
 
+  // ---------------------------
+  // Reset all filters
+  // ---------------------------
+  function resetFilters() {
+    setSearch("");
+    setActiveCuisines([]);
+    setActiveDiets([]);
+    setActiveTimes([]);
+    setBakingOnly(false);
+    fetchRecipes(); // reload default results
+  }
+
+  // ---------------------------
+  // Fetch recipes
+  // ---------------------------
   async function fetchRecipes() {
     try {
       setLoading(true);
       setError("");
 
       const params = new URLSearchParams();
-      params.set("number", "20");
+      params.set("number", "24");
       params.set("addRecipeInformation", "true");
       params.set("apiKey", API_KEY || "");
 
       if (search.trim()) params.set("query", search.trim());
-      if (cuisine) params.set("cuisine", cuisine);
-      if (diet) params.set("diet", diet);
-      if (maxTime) params.set("maxReadyTime", String(maxTime));
+      if (activeCuisines.length)
+        params.set("cuisine", activeCuisines.join(","));
+      if (activeDiets.length) params.set("diet", activeDiets.join(","));
+      if (activeTimes.length)
+        params.set("maxReadyTime", activeTimes[activeTimes.length - 1]);
+
+      // Cozy Baking Only filter
+      if (bakingOnly) {
+        params.set("includeIngredients", "flour,sugar,butter,eggs");
+      }
 
       const url = `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`;
-
       const res = await fetch(url);
 
       if (!res.ok) {
@@ -47,7 +118,17 @@ export default function Recipes() {
       }
 
       const data = await res.json();
-      setRecipes(data.results || []);
+      let results = data.results || [];
+
+      // Extra local filtering for baking vibe
+      if (bakingOnly) {
+        results = results.filter((r: any) => {
+          const title = r.title.toLowerCase();
+          return BAKING_KEYWORDS.some((kw) => title.includes(kw));
+        });
+      }
+
+      setRecipes(results);
     } catch (err) {
       console.error(err);
       setError("Unable to load recipes at the moment.");
@@ -56,6 +137,15 @@ export default function Recipes() {
     }
   }
 
+  // Load on first mount
+  useEffect(() => {
+    fetchRecipes();
+  }, []);
+
+  // ---------------------------
+  // Render
+  // ---------------------------
+
   return (
     <div
       className="min-h-screen pb-28 page-transition page-bg"
@@ -63,6 +153,7 @@ export default function Recipes() {
     >
       <div className="bg-[#1b302c]/40 min-h-screen px-4 py-8">
         <div className="max-w-4xl mx-auto">
+
           {/* HEADER */}
           <header className="text-center mb-6">
             <h1 className="text-3xl font-bold text-white drop-shadow-lg">
@@ -75,82 +166,120 @@ export default function Recipes() {
 
           <FloralDivider variant="mushroom" />
 
-          {/* SEARCH + FILTERS */}
-          <div className="mt-6 mb-4 space-y-3">
-            {/* Search */}
-            <div className="flex justify-center">
-              <input
-                type="text"
-                placeholder="Search recipes..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="
-                  w-full max-w-md px-4 py-2 rounded-xl shadow-md
-                  bg-[#faf6f0] text-[#1b302c] border border-[#b8d3d5]
-                  focus:outline-none focus:ring-2 focus:ring-[#b8d3d5]
-                "
-              />
+          {/* SEARCH */}
+          <div className="mt-6 mb-4 flex justify-center">
+            <input
+              type="text"
+              placeholder="Search recipes..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="
+                w-full max-w-md px-4 py-2 rounded-xl shadow-md
+                bg-[#faf6f0] text-[#1b302c] border border-[#b8d3d5]
+                focus:outline-none focus:ring-2 focus:ring-[#b8d3d5]
+              "
+            />
+          </div>
+
+          {/* FILTER TAGS */}
+          <div className="space-y-4">
+
+            {/* Cuisine */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {CUISINE_TAGS.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() =>
+                    toggleItem(activeCuisines, setActiveCuisines, tag.id)
+                  }
+                  className={`px-4 py-2 rounded-full border shadow-sm transition
+                    ${
+                      activeCuisines.includes(tag.id)
+                        ? "bg-emerald-200 border-emerald-400"
+                        : "bg-[#faf6f0] border-[#b8d3d5]"
+                    }
+                  `}
+                >
+                  {tag.label}
+                </button>
+              ))}
             </div>
 
-            {/* Filter row */}
-            <div className="flex flex-wrap gap-3 justify-center text-sm">
-              {/* Cuisine */}
-              <select
-                value={cuisine}
-                onChange={(e) => setCuisine(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-[#faf6f0] border border-[#b8d3d5]"
-              >
-                <option value="">Any cuisine</option>
-                <option value="american">American</option>
-                <option value="italian">Italian</option>
-                <option value="mexican">Mexican</option>
-                <option value="chinese">Chinese</option>
-                <option value="japanese">Japanese</option>
-                <option value="indian">Indian</option>
-                <option value="french">French</option>
-                <option value="mediterranean">Mediterranean</option>
-              </select>
-
-              {/* Diet */}
-              <select
-                value={diet}
-                onChange={(e) => setDiet(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-[#faf6f0] border border-[#b8d3d5]"
-              >
-                <option value="">Any diet</option>
-                <option value="vegetarian">Vegetarian</option>
-                <option value="vegan">Vegan</option>
-                <option value="gluten free">Gluten Free</option>
-                <option value="ketogenic">Keto</option>
-                <option value="paleo">Paleo</option>
-              </select>
-
-              {/* Max time */}
-              <div className="flex items-center gap-2 bg-[#faf6f0] px-3 py-2 rounded-xl border border-[#b8d3d5]">
-                <span>Max time:</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={maxTime}
-                  onChange={(e) =>
-                    setMaxTime(e.target.value ? Number(e.target.value) : "")
+            {/* Diet */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {DIET_TAGS.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() =>
+                    toggleItem(activeDiets, setActiveDiets, tag.id)
                   }
-                  className="w-16 bg-transparent border-b border-[#b8d3d5] focus:outline-none text-center"
-                />
-                <span>min</span>
-              </div>
+                  className={`px-4 py-2 rounded-full border shadow-sm transition
+                    ${
+                      activeDiets.includes(tag.id)
+                        ? "bg-emerald-200 border-emerald-400"
+                        : "bg-[#faf6f0] border-[#b8d3d5]"
+                    }
+                  `}
+                >
+                  {tag.label}
+                </button>
+              ))}
+            </div>
 
-              {/* Apply button */}
+            {/* Time */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {TIME_TAGS.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => toggleItem(activeTimes, setActiveTimes, tag.id)}
+                  className={`px-4 py-2 rounded-full border shadow-sm transition
+                    ${
+                      activeTimes.includes(tag.id)
+                        ? "bg-emerald-200 border-emerald-400"
+                        : "bg-[#faf6f0] border-[#b8d3d5]"
+                    }
+                  `}
+                >
+                  {tag.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Cozy Baking Only Toggle */}
+            <div className="flex justify-center mt-2">
+              <button
+                onClick={() => setBakingOnly(!bakingOnly)}
+                className={`px-5 py-2 rounded-xl shadow-md transition border
+                  ${
+                    bakingOnly
+                      ? "bg-amber-200 border-amber-400 text-[#4b3b2f]"
+                      : "bg-[#faf6f0] border-[#b8d3d5] text-[#1b302c]"
+                  }
+                `}
+              >
+                🍰 Cozy Baking Only
+              </button>
+            </div>
+
+            {/* Apply & Reset */}
+            <div className="text-center flex gap-4 justify-center mt-4">
               <button
                 onClick={fetchRecipes}
-                className="px-4 py-2 bg-emerald-200 hover:bg-emerald-300 text-[#1b302c] rounded-xl shadow-md"
+                className="px-6 py-2 bg-emerald-200 hover:bg-emerald-300 text-[#1b302c] rounded-xl shadow-md transition"
               >
-                Apply filters
+                Apply Filters ✨
+              </button>
+
+              <button
+                onClick={resetFilters}
+                className="px-6 py-2 bg-rose-200 hover:bg-rose-300 text-[#4b3b2f] rounded-xl shadow-md transition"
+              >
+                Reset Filters ♻️
               </button>
             </div>
           </div>
 
-          {/* CONTENT */}
+          {/* RESULTS */}
           {loading && (
             <p className="text-white text-center text-lg mt-10">
               Loading recipes…
@@ -162,9 +291,10 @@ export default function Recipes() {
           )}
 
           {!loading && !error && (
-            <DecorativeFrame className="mt-4">
+            <DecorativeFrame className="mt-6">
               <div className="parchment-card p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+
                   {recipes.map((recipe) => (
                     <Link
                       key={recipe.id}
@@ -181,12 +311,12 @@ export default function Recipes() {
                           {recipe.title}
                         </h3>
                         <p className="text-xs text-[#5f3c43] mt-1">
-                          {recipe.readyInMinutes} min • {recipe.servings}{" "}
-                          servings
+                          {recipe.readyInMinutes} min • {recipe.servings} servings
                         </p>
                       </div>
                     </Link>
                   ))}
+
                 </div>
 
                 {recipes.length === 0 && (

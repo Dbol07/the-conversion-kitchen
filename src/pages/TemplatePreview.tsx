@@ -3,7 +3,7 @@ import cookieFull from "@/assets/templates/cookie-template-full.png";
 import cakeFull from "@/assets/templates/cake-template-full.png";
 import breadFull from "@/assets/templates/bread-template-full.png";
 
-// Updated import — correct file extension (.jpg)
+// Correct parchment texture
 import floralParchment from "@/assets/backgrounds/parchment-floral.jpg";
 
 export default function TemplatePreview() {
@@ -39,9 +39,10 @@ export default function TemplatePreview() {
         backgroundImage: `url(${floralParchment})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
-      <div className="bg-white/90 backdrop-blur-sm max-w-3xl w-full p-6 rounded-2xl shadow-2xl border border-[#d2bfa3]">
+      <div className="bg-white/90 backdrop-blur-sm max-w-3xl w-full p-6 rounded-2xl shadow-xl border border-[#d2bfa3]">
 
         <h1 className="text-3xl font-bold text-center mb-6 text-[#4b3b2f] drop-shadow">
           {selected.title}
@@ -51,6 +52,7 @@ export default function TemplatePreview() {
           <img
             src={selected.img}
             alt={selected.title}
+            loading="lazy"
             className="w-full rounded-xl shadow-lg"
           />
         </div>

@@ -16,11 +16,13 @@
 
 @layer base {
   * { @apply border-border; }
+
   body {
     @apply font-sans text-[#1b302c];
     background-color: var(--cream);
     font-family: 'Quicksand', sans-serif;
   }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Cormorant Garamond', serif;
   }
@@ -30,13 +32,32 @@
   .parchment-card {
     @apply relative bg-[#faf6f0] rounded-2xl shadow-lg border-2 border-[#a77a72];
   }
+
   .cottagecore-btn {
     @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95;
   }
+
   .page-bg {
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
+  }
+
+  /* ⭐ QUICK TOOLS BUTTON */
+  .quicktool-btn {
+    @apply flex flex-col items-center p-3 rounded-xl 
+           bg-[#faf6f0] border border-[#e4d5b8] 
+           shadow-sm text-[#4b3b2f] font-semibold
+           transition-all duration-200;
+  }
+
+  .quicktool-btn:hover {
+    @apply bg-[#f2e8d8] -translate-y-1 shadow-md;
+  }
+
+  /* ⭐ TEMPLATE THUMBNAIL BORDER */
+  .template-card img {
+    @apply border border-[#e4d5b8];
   }
 }
 
@@ -47,9 +68,19 @@
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes bounceSoft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-.page-transition { animation: fadeIn 0.3s ease-out, slideUp 0.4s ease-out; }
+@keyframes slideUp { 
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounceSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.page-transition {
+  animation: fadeIn 0.3s ease-out, slideUp 0.4s ease-out;
+}
 
 html { scroll-behavior: smooth; }

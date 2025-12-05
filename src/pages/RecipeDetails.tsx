@@ -31,21 +31,28 @@ export default function RecipeDetails() {
     if (id) fetchRecipe();
   }, [id]);
 
+  /* ----------------------------------------------------
+     CONVERT INGREDIENTS → SEND TO CALCULATOR
+  ---------------------------------------------------- */
   function handleConvertIngredients() {
     if (!recipe?.extendedIngredients) return;
 
-    const ingredients = recipe.extendedIngredients.map((ing: any) => ing.original);
+    // Build "name:amount unit" pairs
+    const formatted = recipe.extendedIngredients
+      .map((ing: any) => {
+        const name = ing.nameClean || ing.name || "";
+        const amount = ing.original || "";
+        return `${name}:${amount}`;
+      })
+      .join(";");
 
-    navigate(`/recipes/${id}/convert`, {
-      state: {
-        recipeId: id,
-        title: recipe.title,
-        image: recipe.image,
-        ingredients,
-      },
-    });
+    // Navigate directly to Calculator with query parameter
+    navigate(`/calculator?ingredients=${encodeURIComponent(formatted)}`);
   }
 
+  /* ----------------------------------------------------
+     UI
+  ---------------------------------------------------- */
   if (loading) {
     return (
       <div className="text-center text-white py-20 text-xl">
@@ -99,7 +106,7 @@ export default function RecipeDetails() {
 
             <FloralDivider variant="mushroom" />
 
-            {/* INGREDIENTS */}
+            {/* INGREDIENTS HEADER + BUTTON */}
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#1b302c] mt-4 mb-2">
                 Ingredients
@@ -113,6 +120,7 @@ export default function RecipeDetails() {
               </button>
             </div>
 
+            {/* INGREDIENT LIST */}
             <ul className="list-disc list-inside text-[#3c6150] space-y-1">
               {recipe.extendedIngredients?.map((ing: any) => (
                 <li key={ing.id}>{ing.original}</li>
