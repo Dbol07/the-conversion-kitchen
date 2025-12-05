@@ -1,271 +1,264 @@
-import React, { useState } from "react";
-import { convert } from "../utils/conversions";
-import FloralDivider from "../components/FloralDivider";
+import React, { useEffect, useState } from "react";
 import DecorativeFrame from "../components/DecorativeFrame";
+import FloralDivider from "../components/FloralDivider";
 import BgCalculator from "../assets/backgrounds/bg-calculator.jpg";
+import { loadTemplates, RecipeTemplate } from "../utils/templateLoader";
 
-type UnitSystem = "us" | "metric";
+type MeasurementSystem = "us" | "metric";
+type Kind = "volume" | "weight";
 
-type Ingredient = {
-  name: string;
-  usAmount: number;
-  usUnit: string;
-  metricAmount: number;
-  metricUnit: string;
+// Simple unit conversion helpers (same as before)
+const volumeFactorsMl: Record<string, number> = {
+  tsp: 4.92892,
+  tbsp: 14.7868,
+  cup: 240,
+  ml: 1,
+  l: 1000,
 };
 
-type RecipeTemplate = {
-  id: string;
-  name: string;
-  baseServings: number;
-  photo: string; // we’ll use a simple placeholder for now (could be real assets later)
-  ingredients: Ingredient[];
+const weightFactorsG: Record<string, number> = {
+  g: 1,
+  kg: 1000,
+  oz: 28.3495,
+  lb: 453.592,
 };
 
-const TEMPLATES: RecipeTemplate[] = [
-  {
-    id: "cookies",
-    name: "Cozy Cookies",
-    baseServings: 24,
-    photo: "https://placehold.co/300x180?text=Cookies",
-    ingredients: [
-      {
-        name: "Butter",
-        usAmount: 1,
-        usUnit: "cup",
-        metricAmount: 227,
-        metricUnit: "g",
-      },
-      {
-        name: "Sugar",
-        usAmount: 1,
-        usUnit: "cup",
-        metricAmount: 200,
-        metricUnit: "g",
-      },
-      {
-        name: "Eggs",
-        usAmount: 2,
-        usUnit: "large",
-        metricAmount: 2,
-        metricUnit: "eggs",
-      },
-      {
-        name: "Flour",
-        usAmount: 2.25,
-        usUnit: "cups",
-        metricAmount: 270,
-        metricUnit: "g",
-      },
-      {
-        name: "Baking Soda",
-        usAmount: 1,
-        usUnit: "tsp",
-        metricAmount: 5,
-        metricUnit: "g",
-      },
-      {
-        name: "Vanilla",
-        usAmount: 1,
-        usUnit: "tsp",
-        metricAmount: 5,
-        metricUnit: "ml",
-      },
-    ],
-  },
-  {
-    id: "cake",
-    name: "Soft Vanilla Cake",
-    baseServings: 12,
-    photo: "https://placehold.co/300x180?text=Cake",
-    ingredients: [
-      {
-        name: "Flour",
-        usAmount: 2,
-        usUnit: "cups",
-        metricAmount: 240,
-        metricUnit: "g",
-      },
-      {
-        name: "Sugar",
-        usAmount: 1.5,
-        usUnit: "cups",
-        metricAmount: 300,
-        metricUnit: "g",
-      },
-      {
-        name: "Butter",
-        usAmount: 0.5,
-        usUnit: "cup",
-        metricAmount: 113,
-        metricUnit: "g",
-      },
-      {
-        name: "Eggs",
-        usAmount: 2,
-        usUnit: "large",
-        metricAmount: 2,
-        metricUnit: "eggs",
-      },
-      {
-        name: "Milk",
-        usAmount: 1,
-        usUnit: "cup",
-        metricAmount: 240,
-        metricUnit: "ml",
-      },
-    ],
-  },
-  {
-    id: "bread",
-    name: "Everyday Bread",
-    baseServings: 12,
-    photo: "https://placehold.co/300x180?text=Bread",
-    ingredients: [
-      {
-        name: "Flour",
-        usAmount: 3,
-        usUnit: "cups",
-        metricAmount: 360,
-        metricUnit: "g",
-      },
-      {
-        name: "Warm Water",
-        usAmount: 1,
-        usUnit: "cup",
-        metricAmount: 240,
-        metricUnit: "ml",
-      },
-      {
-        name: "Sugar",
-        usAmount: 2,
-        usUnit: "tbsp",
-        metricAmount: 25,
-        metricUnit: "g",
-      },
-      {
-        name: "Oil",
-        usAmount: 2,
-        usUnit: "tbsp",
-        metricAmount: 30,
-        metricUnit: "ml",
-      },
-      {
-        name: "Yeast",
-        usAmount: 1,
-        usUnit: "tbsp",
-        metricAmount: 9,
-        metricUnit: "g",
-      },
-    ],
-  },
-];
+function convertValue(
+  value: number,
+  fromUnit: string,
+  toUnit: string,
+  kind: Kind
+): number | null {
+  if (kind === "volume") {
+    const from = volumeFactorsMl[fromUnit];
+    const to = volumeFactorsMl[toUnit];
+    if (!from || !to) return null;
+    return (value * from) / to;
+  } else {
+    const from = weightFactorsG[fromUnit];
+    const to = weightFactorsG[toUnit];
+    if (!from || !to) return null;
+    return (value * from) / to;
+  }
+}
 
-const INGREDIENT_WEIGHTS: { [key: string]: number } = {
-  flour: 120, // g per cup
-  sugar: 200, // g per cup
-  butter: 227, // g per cup
+// Ingredient densities in grams per cup (approx)
+const ingredientGramsPerCup: Record<string, number> = {
+  flour: 120,
+  sugar: 200,
+  "brown sugar": 220,
+  butter: 227,
 };
+
+// Parse strings like "2 cups", "1 1/2 cups", "0.5 cup"
+function parseAmountAndRest(
+  measurement: string
+): { amount: number | null; rest: string } {
+  const tokens = measurement.trim().split(/\s+/);
+  let amount = 0;
+  let consumed = 0;
+
+  const isNumber = (t: string) => /^\d+(\.\d+)?$/.test(t);
+  const isFraction = (t: string) => /^\d+\/\d+$/.test(t);
+
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (isNumber(t)) {
+      amount += parseFloat(t);
+      consumed = i + 1;
+    } else if (isFraction(t)) {
+      const [num, den] = t.split("/");
+      amount += parseInt(num, 10) / parseInt(den, 10);
+      consumed = i + 1;
+    } else {
+      break;
+    }
+  }
+
+  if (consumed === 0) {
+    return { amount: null, rest: measurement };
+  }
+
+  const rest = tokens.slice(consumed).join(" ");
+  return { amount, rest };
+}
+
+const volumeUnits = ["tsp", "tbsp", "cup", "ml", "l"];
+const weightUnits = ["g", "kg", "oz", "lb"];
 
 export default function Calculator() {
-  // -----------------------------
-  // UNIT CONVERTER STATE
-  // -----------------------------
-  const [category, setCategory] = useState("volume");
-  const [value, setValue] = useState("");
+  // System toggle
+  const [system, setSystem] = useState<MeasurementSystem>("us");
+
+  // Converter state
+  const [kind, setKind] = useState<Kind>("volume");
+  const [inputValue, setInputValue] = useState("");
   const [fromUnit, setFromUnit] = useState("cup");
   const [toUnit, setToUnit] = useState("ml");
-  const [result, setResult] = useState("");
-  const [showToast, setShowToast] = useState(false);
+  const [convertResult, setConvertResult] = useState<string | null>(null);
 
-  const units = {
-    volume: ["tsp", "tbsp", "fl oz", "cup", "pint", "quart", "gallon", "ml", "liter"],
-    weight: ["oz", "lb", "g", "kg"],
-    temperature: ["F", "C", "K"],
-  };
-
-  const handleConvert = (val: string) => {
-    setValue(val);
-    if (val && !isNaN(Number(val))) {
-      const converted = convert(Number(val), fromUnit, toUnit, category);
-      setResult(converted.toFixed(2));
-    } else {
-      setResult("");
-    }
-  };
-
-  const swapUnits = () => {
-    const temp = fromUnit;
-    setFromUnit(toUnit);
-    setToUnit(temp);
-    if (value) {
-      const converted = convert(Number(value), toUnit, temp, category);
-      setResult(converted.toFixed(2));
-    }
-  };
-
-  const copyResult = () => {
-    if (result) {
-      navigator.clipboard.writeText(result);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
-    }
-  };
-
-  // -----------------------------
-  // RECIPE SCALER & TEMPLATES
-  // -----------------------------
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>("us");
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("cookies");
+  // Recipe scaler state
   const [origServings, setOrigServings] = useState("");
   const [newServings, setNewServings] = useState("");
 
-  const selectedTemplate = TEMPLATES.find((t) => t.id === selectedTemplateId) || TEMPLATES[0];
+  // Templates
+  const [templates, setTemplates] = useState<RecipeTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const [activeTemplateIndex, setActiveTemplateIndex] = useState(0);
 
-  const baseServings = selectedTemplate.baseServings;
-  const actualOrigServings = origServings || String(baseServings);
+  // Ingredient weight helper
+  const [weightIngredient, setWeightIngredient] = useState("flour");
+  const [weightAmount, setWeightAmount] = useState("");
+  const [weightUnit, setWeightUnit] = useState("cup");
+  const [weightResult, setWeightResult] = useState<string | null>(null);
 
+  // Derived scale factor
   const scaleFactor =
-    actualOrigServings && newServings
-      ? Number(newServings) / Number(actualOrigServings)
+    origServings && newServings
+      ? Number(newServings) / Number(origServings)
       : null;
 
-  const buildScaledRecipeMarkdown = () => {
-    if (!scaleFactor) return "";
+  const activeTemplate =
+    templates.length > 0 ? templates[activeTemplateIndex] : null;
 
-    const header = `### ${selectedTemplate.name} (scaled)\n\nServings: ${newServings} (base ${actualOrigServings})\n\nIngredients:\n`;
+  // Load templates on mount
+  useEffect(() => {
+    let cancelled = false;
 
-    const lines = selectedTemplate.ingredients.map((ing) => {
-      const baseAmount = unitSystem === "us" ? ing.usAmount : ing.metricAmount;
-      const unit = unitSystem === "us" ? ing.usUnit : ing.metricUnit;
-      const scaled = baseAmount * scaleFactor;
-      const rounded = Math.round(scaled * 100) / 100;
-      return `- **${rounded} ${unit}** ${ing.name}`;
-    });
+    async function run() {
+      try {
+        setTemplatesLoading(true);
+        const data = await loadTemplates();
+        if (!cancelled) {
+          setTemplates(data);
+          if (data.length > 0) {
+            setActiveTemplateIndex(0);
+            // Only set origServings if user hasn't typed anything yet
+            setOrigServings((prev) =>
+              prev || String(data[0].servings ?? "")
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load templates:", err);
+        if (!cancelled) {
+          setTemplatesError("Unable to load recipe templates.");
+        }
+      } finally {
+        if (!cancelled) {
+          setTemplatesLoading(false);
+        }
+      }
+    }
 
-    return `${header}${lines.join("\n")}\n`;
-  };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const handleCopyScaledRecipe = () => {
-    if (!scaleFactor) return;
-    const md = buildScaledRecipeMarkdown();
-    if (md) {
-      navigator.clipboard.writeText(md);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
+  const handleConvert = () => {
+    const value = parseFloat(inputValue);
+    if (isNaN(value)) {
+      setConvertResult("Please enter a valid number.");
+      return;
+    }
+    const result = convertValue(value, fromUnit, toUnit, kind);
+    if (result === null) {
+      setConvertResult("Conversion not available for these units.");
+    } else {
+      setConvertResult(`${result.toFixed(2)} ${toUnit}`);
     }
   };
 
-  // -----------------------------
-  // INGREDIENT WEIGHT HELPER
-  // -----------------------------
-  const [weightIngredient, setWeightIngredient] = useState("flour");
-  const [weightCups, setWeightCups] = useState("");
+  const handleWeightConvert = () => {
+    const amt = parseFloat(weightAmount);
+    if (isNaN(amt)) {
+      setWeightResult("Enter a valid amount.");
+      return;
+    }
 
-  const computedGrams =
-    weightCups && !isNaN(Number(weightCups))
-      ? Number(weightCups) * INGREDIENT_WEIGHTS[weightIngredient]
-      : null;
+    const gramsPerCup = ingredientGramsPerCup[weightIngredient];
+    if (!gramsPerCup) {
+      setWeightResult("Unknown ingredient.");
+      return;
+    }
+
+    let grams = 0;
+    if (weightUnit === "cup") {
+      grams = amt * gramsPerCup;
+    } else if (weightUnit === "tbsp") {
+      const cups = amt / 16; // 16 tbsp = 1 cup
+      grams = cups * gramsPerCup;
+    } else if (weightUnit === "tsp") {
+      const cups = amt / 48; // 48 tsp = 1 cup
+      grams = cups * gramsPerCup;
+    } else if (weightUnit === "g") {
+      grams = amt;
+    } else if (weightUnit === "oz") {
+      grams = amt * 28.3495;
+    }
+
+    const ounces = grams / 28.3495;
+    setWeightResult(
+      `${grams.toFixed(1)} g (${ounces.toFixed(2)} oz) of ${weightIngredient}`
+    );
+  };
+
+  const handleCopyScaledRecipe = async () => {
+    if (!scaleFactor || !activeTemplate) {
+      alert("Please select a template and set servings first.");
+      return;
+    }
+
+    const lines: string[] = [];
+
+    for (const ing of activeTemplate.ingredients) {
+      const sourceString = system === "us" ? ing.us : ing.metric;
+      const { amount, rest } = parseAmountAndRest(sourceString);
+      if (amount === null) {
+        // fallback: show as original with factor
+        lines.push(`- ${sourceString} (${scaleFactor.toFixed(2)}×) ${ing.item}`);
+      } else {
+        const scaled = amount * scaleFactor;
+        lines.push(
+          `- **${scaled.toFixed(2)} ${rest}** ${ing.item}`.trim()
+        );
+      }
+    }
+
+    const markdownParts: string[] = [
+      `### ${activeTemplate.name} (scaled)`,
+      ``,
+      `Base servings: ${activeTemplate.servings}`,
+      `New servings: ${newServings || "?"}`,
+      `Scale factor: ${scaleFactor.toFixed(2)}×`,
+      ``,
+      ...lines,
+    ];
+
+    if (activeTemplate.instructions && activeTemplate.instructions.length > 0) {
+      markdownParts.push("", "#### Instructions", "");
+      activeTemplate.instructions.forEach((step, idx) => {
+        markdownParts.push(`${idx + 1}. ${step}`);
+      });
+    }
+
+    const markdown = markdownParts.join("\n");
+
+    try {
+      await navigator.clipboard.writeText(markdown);
+      alert("Scaled recipe copied in Markdown format!");
+    } catch (err) {
+      console.error(err);
+      alert("Unable to copy to clipboard in this browser.");
+    }
+  };
+
+  const currentUnits = kind === "volume" ? volumeUnits : weightUnits;
+
+  const systemLabel = system === "us" ? "US Cups" : "Metric";
 
   return (
     <div
@@ -279,301 +272,345 @@ export default function Calculator() {
             <h1 className="text-3xl font-bold text-white drop-shadow-lg">
               Kitchen Calculator
             </h1>
-            <p className="text-white/80 mt-1 text-sm">
-              Convert measurements, scale recipes, and balance cups & grams.
+            <p className="text-white/85 text-sm mt-1">
+              Convert measurements, scale recipes, and keep everything cozy.
             </p>
           </header>
 
+          {/* SYSTEM TOGGLE */}
+          <div className="flex justify-center mb-4">
+            <div className="inline-flex items-center bg-[#faf6f0]/90 rounded-full p-1 shadow-md">
+              <button
+                className={`px-4 py-1 text-sm rounded-full ${
+                  system === "us"
+                    ? "bg-[#5f3c43] text-white"
+                    : "text-[#5f3c43]"
+                }`}
+                onClick={() => setSystem("us")}
+              >
+                US
+              </button>
+              <button
+                className={`px-4 py-1 text-sm rounded-full ${
+                  system === "metric"
+                    ? "bg-[#5f3c43] text-white"
+                    : "text-[#5f3c43]"
+                }`}
+                onClick={() => setSystem("metric")}
+              >
+                Metric
+              </button>
+            </div>
+          </div>
+
           <FloralDivider variant="vine" />
 
-          {/* ---------------- UNIT CONVERTER ---------------- */}
+          {/* MEASUREMENT CONVERTER */}
           <DecorativeFrame className="mt-6">
             <div className="parchment-card p-6">
-              <h2 className="text-2xl font-bold text-[#1b302c] mb-4 text-center">
+              <h2 className="text-2xl font-bold text-[#1b302c] text-center mb-3">
                 Measurement Converter
               </h2>
+              <p className="text-[#5f3c43] text-sm text-center mb-4">
+                Quickly convert between common kitchen units ({systemLabel}).
+              </p>
 
-              <div className="grid grid-cols-1 gap-4 mb-4">
-                <label className="block">
-                  <span className="text-[#1b302c] font-semibold">Category</span>
-                  <select
-                    value={category}
-                    onChange={(e) => {
-                      setCategory(e.target.value);
-                      setResult("");
-                    }}
-                    className="w-full mt-2 p-3 border-2 border-[#b8d3d5] rounded-xl bg-[#faf6f0] focus:border-[#3c6150] transition-all"
-                  >
-                    <option value="volume">Volume</option>
-                    <option value="weight">Weight</option>
-                    <option value="temperature">Temperature</option>
-                  </select>
-                </label>
-
-                <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
-                  <label>
-                    <span className="text-[#1b302c] font-semibold">From</span>
-                    <select
-                      value={fromUnit}
-                      onChange={(e) => setFromUnit(e.target.value)}
-                      className="w-full mt-2 p-3 border-2 border-[#b8d3d5] rounded-xl bg-[#faf6f0] focus:border-[#3c6150] transition-all"
-                    >
-                      {units[category as keyof typeof units].map((u) => (
-                        <option key={u} value={u}>
-                          {u}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <button
-                    onClick={swapUnits}
-                    className="bg-[#a77a72] text-white p-3 rounded-xl hover:bg-[#5f3c43] transition-all hover:scale-110 shadow-md mt-6"
-                    title="Swap units"
-                  >
-                    ⇆
-                  </button>
-
-                  <label>
-                    <span className="text-[#1b302c] font-semibold">To</span>
-                    <select
-                      value={toUnit}
-                      onChange={(e) => setToUnit(e.target.value)}
-                      className="w-full mt-2 p-3 border-2 border-[#b8d3d5] rounded-xl bg-[#faf6f0] focus:border-[#3c6150] transition-all"
-                    >
-                      {units[category as keyof typeof units].map((u) => (
-                        <option key={u} value={u}>
-                          {u}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                <input
-                  type="number"
-                  value={value}
-                  onChange={(e) => handleConvert(e.target.value)}
-                  placeholder="Enter value..."
-                  className="w-full p-4 border-2 border-[#b8d3d5] rounded-xl text-lg bg-[#faf6f0] focus:border-[#3c6150] transition-all"
-                />
+              {/* Volume / Weight toggle */}
+              <div className="flex justify-center mb-4 gap-2">
+                <button
+                  className={`px-4 py-1 rounded-full text-sm ${
+                    kind === "volume"
+                      ? "bg-[#3c6150] text-white"
+                      : "bg-[#faf6f0] text-[#5f3c43] border border-[#b8d3d5]"
+                  }`}
+                  onClick={() => {
+                    setKind("volume");
+                    setFromUnit("cup");
+                    setToUnit(system === "metric" ? "ml" : "cup");
+                  }}
+                >
+                  Volume
+                </button>
+                <button
+                  className={`px-4 py-1 rounded-full text-sm ${
+                    kind === "weight"
+                      ? "bg-[#3c6150] text-white"
+                      : "bg-[#faf6f0] text-[#5f3c43] border border-[#b8d3d5]"
+                  }`}
+                  onClick={() => {
+                    setKind("weight");
+                    setFromUnit(system === "metric" ? "g" : "oz");
+                    setToUnit(system === "metric" ? "g" : "oz");
+                  }}
+                >
+                  Weight
+                </button>
               </div>
 
-              {result && (
-                <div className="bg-gradient-to-r from-[#b8d3d5] to-[#a77a72]/50 p-4 rounded-xl flex justify-between items-center animate-fade-in shadow-inner">
-                  <span className="text-2xl font-bold text-[#1b302c]">
-                    {result} {toUnit}
-                  </span>
-                  <button
-                    onClick={copyResult}
-                    className="px-4 py-2 rounded-xl bg-[#3c6150] text-white text-sm font-semibold hover:bg-[#5f3c43] transition-all"
-                  >
-                    Copy
-                  </button>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input
+                  type="number"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Enter value"
+                  className="p-3 rounded-xl bg-white border-2 border-[#b8d3d5] text-[#1b302c] shadow-sm focus:border-[#3c6150] transition-all"
+                />
+
+                <select
+                  value={fromUnit}
+                  onChange={(e) => setFromUnit(e.target.value)}
+                  className="p-3 rounded-xl bg-white border-2 border-[#b8d3d5] text-[#1b302c] shadow-sm focus:border-[#3c6150] transition-all"
+                >
+                  {currentUnits.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={toUnit}
+                  onChange={(e) => setToUnit(e.target.value)}
+                  className="p-3 rounded-xl bg-white border-2 border-[#b8d3d5] text-[#1b302c] shadow-sm focus:border-[#3c6150] transition-all"
+                >
+                  {currentUnits.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handleConvert}
+                className="w-full mt-4 py-3 rounded-xl bg-[#3c6150] text-white font-semibold hover:bg-[#5f3c43] transition-all shadow-md"
+              >
+                Convert
+              </button>
+
+              {convertResult && (
+                <div className="mt-4 bg-[#b8d3d5]/40 p-4 rounded-xl text-center shadow-inner">
+                  <p className="text-lg font-bold text-[#1b302c]">
+                    {convertResult}
+                  </p>
                 </div>
               )}
+
+              {/* Ingredient Weight Helper */}
+              <div className="mt-6 pt-4 border-t border-[#e0d4c3]">
+                <h3 className="text-lg font-bold text-[#1b302c] mb-2 text-center">
+                  Ingredient Weight Helper
+                </h3>
+                <p className="text-[#5f3c43] text-xs text-center mb-3">
+                  Perfect for flour, sugar, brown sugar, and butter.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                  <input
+                    type="number"
+                    value={weightAmount}
+                    onChange={(e) => setWeightAmount(e.target.value)}
+                    placeholder="Amount"
+                    className="p-3 rounded-xl bg-white border-2 border-[#b8d3d5] text-[#1b302c] shadow-sm focus:border-[#3c6150] transition-all"
+                  />
+
+                  <select
+                    value={weightUnit}
+                    onChange={(e) => setWeightUnit(e.target.value)}
+                    className="p-3 rounded-xl bg-white border-2 border-[#b8d3d5] text-[#1b302c] shadow-sm focus:border-[#3c6150] transition-all"
+                  >
+                    <option value="cup">cup</option>
+                    <option value="tbsp">tbsp</option>
+                    <option value="tsp">tsp</option>
+                    <option value="g">g</option>
+                    <option value="oz">oz</option>
+                  </select>
+
+                  <select
+                    value={weightIngredient}
+                    onChange={(e) => setWeightIngredient(e.target.value)}
+                    className="p-3 rounded-xl bg-white border-2 border-[#b8d3d5] text-[#1b302c] shadow-sm focus:border-[#3c6150] transition-all"
+                  >
+                    <option value="flour">Flour</option>
+                    <option value="sugar">Sugar</option>
+                    <option value="brown sugar">Brown sugar</option>
+                    <option value="butter">Butter</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={handleWeightConvert}
+                  className="w-full py-2 rounded-xl bg-[#a77a72] text-white text-sm font-semibold hover:bg-[#5f3c43] transition-all shadow-md"
+                >
+                  Convert to weight
+                </button>
+
+                {weightResult && (
+                  <p className="mt-2 text-center text-[#1b302c] text-sm bg-[#b8d3d5]/40 p-2 rounded-xl">
+                    {weightResult}
+                  </p>
+                )}
+              </div>
             </div>
           </DecorativeFrame>
 
-          <FloralDivider variant="mushroom" />
+          <div className="my-8">
+            <FloralDivider variant="mushroom" />
+          </div>
 
-          {/* ---------------- RECIPE SCALER + TEMPLATES ---------------- */}
-          <DecorativeFrame className="mt-6">
+          {/* RECIPE SCALER + TEMPLATES */}
+          <DecorativeFrame>
             <div className="parchment-card p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                <h2 className="text-2xl font-bold text-[#1b302c]">
-                  Recipe Scaler & Templates
-                </h2>
-
-                {/* Metric / US toggle */}
-                <div className="inline-flex items-center bg-[#faf6f0] border border-[#b8d3d5] rounded-full p-1">
-                  <button
-                    onClick={() => setUnitSystem("us")}
-                    className={`px-3 py-1 text-xs rounded-full ${
-                      unitSystem === "us"
-                        ? "bg-[#3c6150] text-white"
-                        : "text-[#1b302c]"
-                    }`}
-                  >
-                    US
-                  </button>
-                  <button
-                    onClick={() => setUnitSystem("metric")}
-                    className={`px-3 py-1 text-xs rounded-full ${
-                      unitSystem === "metric"
-                        ? "bg-[#3c6150] text-white"
-                        : "text-[#1b302c]"
-                    }`}
-                  >
-                    Metric
-                  </button>
-                </div>
-              </div>
-
-              {/* Template selector */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                {TEMPLATES.map((tpl) => (
-                  <button
-                    key={tpl.id}
-                    onClick={() => {
-                      setSelectedTemplateId(tpl.id);
-                      setOrigServings(String(tpl.baseServings));
-                    }}
-                    className={`border-2 rounded-xl overflow-hidden text-left shadow-sm hover:shadow-md transition-all ${
-                      tpl.id === selectedTemplateId
-                        ? "border-[#a77a72] bg-[#b8d3d5]/20"
-                        : "border-[#b8d3d5] bg-white"
-                    }`}
-                  >
-                    <img
-                      src={tpl.photo}
-                      alt={tpl.name}
-                      className="w-full h-24 object-cover"
-                    />
-                    <div className="p-2">
-                      <p className="text-sm font-semibold text-[#1b302c]">
-                        {tpl.name}
-                      </p>
-                      <p className="text-[11px] text-[#5f3c43]">
-                        Base: {tpl.baseServings} servings
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <h2 className="text-2xl font-bold text-[#1b302c] text-center mb-3">
+                Recipe Scaler & Templates
+              </h2>
+              <p className="text-[#5f3c43] text-sm text-center mb-4">
+                Pick a base recipe, set servings, and get a scaled ingredient
+                list in {systemLabel.toLowerCase()}.
+              </p>
 
               {/* Servings inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="text-[#1b302c] font-semibold">
+                  <label className="text-[#1b302c] font-semibold text-sm">
                     Original Servings
                   </label>
                   <input
                     type="number"
-                    value={origServings || String(baseServings)}
+                    value={origServings}
                     onChange={(e) => setOrigServings(e.target.value)}
-                    className="w-full p-3 mt-2 rounded-xl border-2 border-[#b8d3d5] bg-white focus:border-[#3c6150] transition-all"
+                    placeholder={
+                      activeTemplate
+                        ? String(activeTemplate.servings)
+                        : "e.g. 12"
+                    }
+                    className="w-full p-3 mt-1 rounded-xl border-2 border-[#b8d3d5] bg-white focus:border-[#3c6150] transition-all"
                   />
                 </div>
+
                 <div>
-                  <label className="text-[#1b302c] font-semibold">
+                  <label className="text-[#1b302c] font-semibold text-sm">
                     Desired Servings
                   </label>
                   <input
                     type="number"
                     value={newServings}
                     onChange={(e) => setNewServings(e.target.value)}
-                    placeholder="e.g. 6"
-                    className="w-full p-3 mt-2 rounded-xl border-2 border-[#b8d3d5] bg-white focus:border-[#3c6150] transition-all"
+                    placeholder="e.g. 18"
+                    className="w-full p-3 mt-1 rounded-xl border-2 border-[#b8d3d5] bg-white focus:border-[#3c6150] transition-all"
                   />
                 </div>
               </div>
 
-              {/* Scaled ingredient list */}
-              {scaleFactor ? (
-                <>
-                  <div className="bg-[#b8d3d5]/40 p-3 rounded-xl text-center shadow-inner mb-3">
-                    <p className="text-lg font-bold text-[#1b302c]">
-                      Scale by: {scaleFactor.toFixed(2)}×
-                    </p>
-                    <p className="text-xs text-[#5f3c43] mt-1">
-                      All ingredients below are auto-scaled for you.
-                    </p>
-                  </div>
+              {/* Template selector */}
+              {templatesLoading && (
+                <p className="text-center text-[#5f3c43] text-sm mb-4">
+                  Loading templates…
+                </p>
+              )}
 
-                  <div className="bg-white/90 rounded-xl border border-[#b8d3d5] p-4 max-h-64 overflow-y-auto">
-                    <ul className="space-y-2 text-sm text-[#1b302c]">
-                      {selectedTemplate.ingredients.map((ing) => {
-                        const baseAmount =
-                          unitSystem === "us" ? ing.usAmount : ing.metricAmount;
-                        const unit =
-                          unitSystem === "us" ? ing.usUnit : ing.metricUnit;
-                        const scaled = baseAmount * scaleFactor;
-                        const rounded = Math.round(scaled * 100) / 100;
+              {templatesError && (
+                <p className="text-center text-red-200 text-sm mb-4">
+                  {templatesError}
+                </p>
+              )}
+
+              {!templatesLoading && templates.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs text-[#5f3c43] mb-2 text-center">
+                    Choose a cozy starting point:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {templates.map((t, idx) => (
+                      <button
+                        key={t.name + idx}
+                        onClick={() => {
+                          setActiveTemplateIndex(idx);
+                          setOrigServings((prev) =>
+                            prev || String(t.servings ?? "")
+                          );
+                        }}
+                        className={`p-3 rounded-xl text-sm text-left border-2 transition-all shadow-sm flex flex-col items-center ${
+                          idx === activeTemplateIndex
+                            ? "border-[#a77a72] bg-[#b8d3d5]/40"
+                            : "border-[#b8d3d5] bg-[#faf6f0] hover:bg-[#b8d3d5]/20"
+                        }`}
+                      >
+                        {t.thumb && (
+                          <img
+                            src={t.thumb}
+                            alt={t.name}
+                            className="w-20 h-20 object-cover rounded-lg mb-2 shadow-md"
+                          />
+                        )}
+                        <div className="font-semibold text-[#1b302c] text-center">
+                          {t.name}
+                        </div>
+                        <div className="text-xs text-[#5f3c43] text-center">
+                          Base: {t.servings} servings
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!templatesLoading && templates.length === 0 && (
+                <p className="text-center text-[#5f3c43] text-sm mb-4">
+                  No templates found yet. Add JSON + images to
+                  <br />
+                  <code className="text-xs bg-[#faf6f0] px-2 py-1 rounded">
+                    src/assets/templates/
+                  </code>
+                </p>
+              )}
+
+              {/* Scaled ingredient list */}
+              {activeTemplate && scaleFactor ? (
+                <div className="mt-4 bg-[#b8d3d5]/30 p-4 rounded-xl shadow-inner">
+                  <h3 className="text-lg font-bold text-[#1b302c] mb-2">
+                    Scaled Ingredients ({system === "us" ? "US" : "Metric"})
+                  </h3>
+                  <ul className="space-y-1 text-sm text-[#1b302c]">
+                    {activeTemplate.ingredients.map((ing, idx) => {
+                      const source = system === "us" ? ing.us : ing.metric;
+                      const { amount, rest } = parseAmountAndRest(source);
+
+                      if (amount === null) {
                         return (
-                          <li key={ing.name} className="flex justify-between">
-                            <span>{ing.name}</span>
-                            <span className="font-semibold">
-                              {rounded} {unit}
-                            </span>
+                          <li key={idx}>
+                            {source} ({scaleFactor.toFixed(2)}×) {ing.item}
                           </li>
                         );
-                      })}
-                    </ul>
-                  </div>
+                      }
+
+                      const scaled = amount * scaleFactor;
+                      return (
+                        <li key={idx}>
+                          <span className="font-semibold">
+                            {scaled.toFixed(2)} {rest}
+                          </span>{" "}
+                          {ing.item}
+                        </li>
+                      );
+                    })}
+                  </ul>
 
                   <button
                     onClick={handleCopyScaledRecipe}
-                    className="mt-4 w-full py-3 rounded-xl bg-[#3c6150] text-white text-sm font-semibold hover:bg-[#5f3c43] transition-all shadow-md"
+                    className="mt-4 w-full py-2 rounded-xl bg-[#3c6150] text-white text-sm font-semibold hover:bg-[#5f3c43] transition-all shadow-md"
                   >
-                    Copy Scaled Recipe (Markdown)
+                    Copy scaled recipe (Markdown)
                   </button>
-                </>
+                </div>
               ) : (
-                <p className="text-center text-[#5f3c43] text-sm mt-2">
-                  Enter your desired servings to see the scaled recipe.
+                <p className="text-center text-[#5f3c43] mt-3 text-sm">
+                  Select a template and enter both serving values to see the
+                  scaled ingredient list.
                 </p>
               )}
             </div>
           </DecorativeFrame>
-
-          <FloralDivider variant="vine" />
-
-          {/* ---------------- INGREDIENT WEIGHT HELPER ---------------- */}
-          <DecorativeFrame className="mt-6 mb-10">
-            <div className="parchment-card p-6">
-              <h2 className="text-xl font-bold text-[#1b302c] mb-3 text-center">
-                Ingredient Weight Helper
-              </h2>
-              <p className="text-[#5f3c43] text-center text-sm mb-4">
-                Quickly convert cups of flour, sugar, or butter into grams.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end mb-4">
-                <div>
-                  <label className="text-[#1b302c] font-semibold">
-                    Ingredient
-                  </label>
-                  <select
-                    value={weightIngredient}
-                    onChange={(e) => setWeightIngredient(e.target.value)}
-                    className="w-full mt-2 p-3 border-2 border-[#b8d3d5] rounded-xl bg-[#faf6f0] focus:border-[#3c6150] transition-all"
-                  >
-                    <option value="flour">Flour</option>
-                    <option value="sugar">Sugar</option>
-                    <option value="butter">Butter</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[#1b302c] font-semibold">
-                    Cups (US)
-                  </label>
-                  <input
-                    type="number"
-                    value={weightCups}
-                    onChange={(e) => setWeightCups(e.target.value)}
-                    placeholder="e.g. 1.5"
-                    className="w-full p-3 mt-2 rounded-xl border-2 border-[#b8d3d5] bg-white focus:border-[#3c6150] transition-all"
-                  />
-                </div>
-
-                <div>
-                  <span className="text-[#1b302c] font-semibold">Grams</span>
-                  <div className="w-full p-3 mt-2 rounded-xl border-2 border-dashed border-[#b8d3d5] bg-white text-[#1b302c]">
-                    {computedGrams !== null ? `${computedGrams.toFixed(0)} g` : "—"}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </DecorativeFrame>
-
-          {/* Toast */}
-          {showToast && (
-            <div className="fixed top-4 right-4 bg-[#3c6150] text-white px-6 py-3 rounded-xl shadow-lg animate-slide-up flex items-center gap-2 z-50">
-              <span>Copied!</span>
-            </div>
-          )}
         </div>
       </div>
     </div>
