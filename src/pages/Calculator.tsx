@@ -50,7 +50,7 @@ export default function Calculator() {
 
     let convertedValue = null;
 
-    // Flour conversion example
+    // Flour example conversion
     if (ingredient.toLowerCase() === "flour") {
       if (fromUnit === "cups" && toUnit === "grams") {
         convertedValue = parseFloat(amount) * 120;
@@ -64,34 +64,31 @@ export default function Calculator() {
     }
   }
 
-  /* ----------------------------------------
-     3. DIVIDER (NOW STABLE, NOT CHANGING ON TYPE)
-  ---------------------------------------- */
   const dividerImage = getDividerForPage("calculator");
 
-  /* ----------------------------------------
-     4. UI
-  ---------------------------------------- */
   return (
     <div className="min-h-screen bg-[#faf6f0] pb-32">
-      {/* Title moved ABOVE banner */}
-      <h1 className="text-4xl font-bold text-center pt-10 mb-4 text-[#4b3b2f]">
-        Kitchen Conversion Calculator
-      </h1>
 
-      {/* Decorative banner */}
-      <div className="flex justify-center mb-6">
+      {/* ⭐ Banner with overlay text */}
+      <div className="relative w-full max-w-4xl mx-auto mt-6">
         <img
           src={calculatorBanner}
           alt="Calculator Banner"
-          className="w-full max-w-4xl rounded-xl shadow"
+          className="w-full rounded-xl shadow-xl"
         />
+        <h1 className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-[#4b3b2f] drop-shadow-lg">
+          Kitchen Conversion Calculator
+        </h1>
       </div>
 
-      {/* Divider (stable) */}
-      <PageDivider src={dividerImage} size="md" />
+      {/* Divider */}
+      <div className="flex justify-center mt-6">
+        <PageDivider src={dividerImage} size="md" />
+      </div>
 
-      <div className="max-w-2xl mx-auto bg-white/90 border border-[#e4d5b8] rounded-2xl shadow-xl p-6 mt-6">
+      {/* ⭐ Calculator Card */}
+      <div className="max-w-2xl mx-auto bg-white/90 border border-[#e4d5b8] rounded-2xl shadow-xl p-6 mt-8">
+
         {/* AMOUNT */}
         <label className="block font-medium mb-1">Amount</label>
         <input
@@ -109,9 +106,13 @@ export default function Calculator() {
           className="w-full p-2 mb-4 rounded-lg border"
         >
           <option value="">Select unit…</option>
-          <option value="cups">cups</option>
-          <option value="grams">grams</option>
-          <option value="oz">oz</option>
+          <option value="cups">Cups</option>
+          <option value="tablespoons">Tablespoons</option>
+          <option value="teaspoons">Teaspoons</option>
+          <option value="grams">Grams</option>
+          <option value="oz">Ounces</option>
+          <option value="ml">Milliliters</option>
+          <option value="liters">Liters</option>
         </select>
 
         {/* TO UNIT */}
@@ -122,21 +123,32 @@ export default function Calculator() {
           className="w-full p-2 mb-4 rounded-lg border"
         >
           <option value="">Select unit…</option>
-          <option value="grams">grams</option>
-          <option value="cups">cups</option>
-          <option value="oz">oz</option>
+          <option value="grams">Grams</option>
+          <option value="cups">Cups</option>
+          <option value="oz">Ounces</option>
+          <option value="tablespoons">Tablespoons</option>
+          <option value="teaspoons">Teaspoons</option>
+          <option value="ml">Milliliters</option>
+          <option value="liters">Liters</option>
         </select>
 
-        {/* INGREDIENT */}
+        {/* INGREDIENT → DROPDOWN */}
         <label className="block font-medium mb-1">
           Ingredient (required for some conversions)
         </label>
-        <input
-          type="text"
+        <select
           value={ingredient}
           onChange={(e) => setIngredient(e.target.value)}
           className="w-full p-2 mb-4 rounded-lg border"
-        />
+        >
+          <option value="">Select ingredient…</option>
+          <option value="flour">Flour</option>
+          <option value="sugar">Sugar</option>
+          <option value="butter">Butter</option>
+          <option value="honey">Honey</option>
+          <option value="oats">Oats</option>
+          <option value="rice">Rice</option>
+        </select>
 
         {/* BUTTON */}
         <button

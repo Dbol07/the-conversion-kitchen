@@ -7,11 +7,14 @@ import CalculatorIcon from "../assets/icons/nav/nav-calculator.png";
 import PrintIcon from "../assets/icons/nav/nav-printables.png";
 import FAQIcon from "../assets/icons/nav/nav-faq.png";
 import AboutIcon from "../assets/icons/nav/nav-about.png";
+import RecipesIcon from "../assets/icons/nav/nav-recipes.png";
+
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: HomeIcon, path: "/" },
   { id: "guide", label: "Guide", icon: GuideIcon, path: "/guide" },
   { id: "calculator", label: "Calc", icon: CalculatorIcon, path: "/calculator" },
+{ id: "recipes", label: "Recipes", icon: RecipesIcon, path: "/recipes" },
   { id: "printables", label: "Print", icon: PrintIcon, path: "/printables" },
   { id: "faq", label: "FAQ", icon: FAQIcon, path: "/faq" },
   { id: "about", label: "About", icon: AboutIcon, path: "/about" },

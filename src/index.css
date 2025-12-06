@@ -32,6 +32,13 @@
   .parchment-card {
     @apply relative bg-[#faf6f0] rounded-2xl shadow-lg border-2 border-[#a77a72];
   }
+.banner-text {
+  font-family: 'Cormorant Garamond', serif;
+  color: #4b3b2f;
+  font-size: 36px;
+  font-weight: 600;
+  text-shadow: 0 2px 3px rgba(255,255,255,0.8);
+}
 
   .cottagecore-btn {
     @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95;

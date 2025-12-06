@@ -12,56 +12,29 @@ import pdfLiquid from "@/assets/printables/printable-liquid.pdf";
 import pdfOven from "@/assets/printables/printable-oven.pdf";
 import pdfSubs from "@/assets/printables/printable-subs.pdf";
 
-// JPG preview images (for thumbnails & modal)
+// Updated Preview JPGs
 import imgCups from "@/assets/printables/printable-cups.jpg";
 import imgKitchen from "@/assets/printables/printable-kitchen.jpg";
 import imgLiquid from "@/assets/printables/printable-liquid.jpg";
 import imgOven from "@/assets/printables/printable-oven.jpg";
 import imgSubs from "@/assets/printables/printable-subs.jpg";
 
-// Modal stylesheet override
 const disableSave = {
   WebkitTouchCallout: "none",
   WebkitUserSelect: "none",
   WebkitUserDrag: "none",
   userSelect: "none",
-  pointerEvents: "none",
 };
 
 export default function Printables() {
   const [activeItem, setActiveItem] = useState<any | null>(null);
 
   const items = [
-    {
-      id: "cups",
-      title: "Cups Conversion Chart",
-      pdf: pdfCups,
-      img: imgCups,
-    },
-    {
-      id: "kitchen",
-      title: "Kitchen Tools Chart",
-      pdf: pdfKitchen,
-      img: imgKitchen,
-    },
-    {
-      id: "liquid",
-      title: "Liquid Conversion Chart",
-      pdf: pdfLiquid,
-      img: imgLiquid,
-    },
-    {
-      id: "oven",
-      title: "Oven Temperature Chart",
-      pdf: pdfOven,
-      img: imgOven,
-    },
-    {
-      id: "subs",
-      title: "Substitutions Chart",
-      pdf: pdfSubs,
-      img: imgSubs,
-    },
+    { id: "cups", title: "Cups Conversion Chart", pdf: pdfCups, img: imgCups },
+    { id: "kitchen", title: "Kitchen Tools Chart", pdf: pdfKitchen, img: imgKitchen },
+    { id: "liquid", title: "Liquid Conversion Chart", pdf: pdfLiquid, img: imgLiquid },
+    { id: "oven", title: "Oven Temperature Chart", pdf: pdfOven, img: imgOven },
+    { id: "subs", title: "Substitutions Chart", pdf: pdfSubs, img: imgSubs },
   ];
 
   return (
@@ -69,33 +42,33 @@ export default function Printables() {
       className="min-h-screen pb-28 page-transition page-bg"
       style={{ backgroundImage: `url(${BgPrintables})` }}
     >
-      <div className="bg-[#1b302c]/40 min-h-screen px-4 py-8">
-        <div className="max-w-5xl mx-auto">
+      <div className="bg-[#1b302c]/35 min-h-screen px-4 py-8">
+        <div className="max-w-6xl mx-auto">
 
-          {/* HEADER */}
+          {/* PAGE HEADER */}
           <header className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-white drop-shadow-lg">
-              Printables
+            <h1 className="text-4xl font-bold text-white drop-shadow-lg">
+              Free Printables
             </h1>
-            <p className="text-white/80 text-sm mt-1">
-              Cute and helpful charts to keep in your kitchen
+            <p className="text-white/85 text-md mt-1">
+              Beautiful conversion charts to keep handy in your cozy kitchen
             </p>
           </header>
 
           <FloralDivider variant="floral" />
 
-          {/* GRID */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
+          {/* GRID OF CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mt-10">
             {items.map((p) => (
               <div
                 key={p.id}
-                className="bg-white/90 parchment-card p-4 flex flex-col shadow-lg rounded-xl"
+                className="bg-white/90 parchment-card p-4 flex flex-col shadow-lg rounded-xl border border-[#d9cbb3]"
               >
+                {/* IMAGE is now STATIC — NOT clickable */}
                 <img
                   src={p.img}
                   alt={p.title}
-                  className="rounded-lg mb-4 shadow cursor-pointer hover:opacity-90 transition"
-                  onClick={() => setActiveItem(p)}
+                  className="rounded-lg mb-4 shadow pointer-events-none select-none w-full max-h-[280px] object-contain"
                 />
 
                 <h3 className="text-lg font-semibold text-[#1b302c] text-center">
@@ -120,12 +93,12 @@ export default function Printables() {
             ))}
           </div>
 
-          {/* MODAL */}
+          {/* PREVIEW MODAL */}
           {activeItem && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
               <div className="relative bg-[#faf6f0] rounded-3xl shadow-2xl w-full max-w-5xl flex overflow-hidden">
 
-                {/* THUMBNAIL SIDEBAR */}
+                {/* SIDEBAR */}
                 <div className="w-32 bg-[#f2e8d8] border-r border-[#d3c1a1] p-3 flex flex-col gap-3 overflow-y-auto">
                   {items.map((p) => (
                     <img
@@ -142,7 +115,7 @@ export default function Printables() {
                   ))}
                 </div>
 
-                {/* MAIN PREVIEW */}
+                {/* MAIN LARGE PREVIEW */}
                 <div className="flex-1 p-6 flex justify-center items-center">
                   <div className="relative rounded-2xl border-4 border-[#d2bfa3] shadow-xl">
                     <img

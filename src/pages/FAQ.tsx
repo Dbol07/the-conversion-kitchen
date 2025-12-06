@@ -5,58 +5,76 @@ import FloralDivider from '../components/FloralDivider';
 import BgFAQ from '../assets/backgrounds/bg-faq.jpg';
 
 export default function FAQ() {
-  const faqs = [
-    {
-      title: 'How do I convert cups to grams?',
-      icon: 'teacup' as const,
-      content:
-        'The conversion depends on the ingredient. Flour: 120–125g per cup. Sugar: 200g per cup. Butter: 227g per cup. Use our calculator for precise conversions!'
-    },
-    {
-      title: "What's the difference between fluid ounces and weight ounces?",
-      icon: 'leaf' as const,
-      content:
-        "Fluid ounces measure volume, while weight ounces measure mass. They’re not interchangeable."
-    },
-    {
-      title: 'Can I use this app offline?',
-      icon: 'mushroom' as const,
-      content:
-        'Yes! This PWA works offline after your first visit. You can also install it to your home screen.'
-    },
-    {
-      title: 'How accurate are the conversions?',
-      icon: 'teacup' as const,
-      content:
-        'Our conversions follow standard culinary references. They are ideal for home cooking and baking.'
-    },
-    {
-      title: 'How do I print the conversion charts?',
-      icon: 'leaf' as const,
-      content:
-        "Go to the Printables page, tap any chart’s Download button, and print the saved file."
-    },
-
-    // NEW FAQ ENTRIES
-    {
-      title: 'Why do different flour brands weigh differently?',
-      icon: 'mushroom' as const,
-      content:
-        'Flour compacts differently depending on humidity and brand. Always spoon-and-level for the most consistent results.'
-    },
-    {
-      title: 'What’s the easiest way to halve a recipe with 1 egg?',
-      icon: 'leaf' as const,
-      content:
-        'Beat the egg, measure it, and use half (about 1.5 tablespoons).'
-    },
-    {
-      title: 'Is it okay to substitute baking soda for baking powder?',
-      icon: 'teacup' as const,
-      content:
-        'Sometimes! But you also need acid (like lemon or vinegar) for baking soda to activate.'
-    }
-  ];
+ 
+const faqs = [
+  {
+    title: 'How do I convert cups to grams?',
+    icon: 'teacup' as const,
+    content:
+      'It depends on the ingredient: Flour ≈ 120–125g per cup, Sugar ≈ 200g per cup, Butter ≈ 227g per cup. For precise results, use the Calculator.'
+  },
+  {
+    title: "What's the difference between fluid ounces and weight ounces?",
+    icon: 'leaf' as const,
+    content:
+      'Fluid ounces measure liquid volume, while weight ounces measure mass. They are not interchangeable.'
+  },
+  {
+    title: 'Can I use this app offline?',
+    icon: 'mushroom' as const,
+    content:
+      'Yes! After your first visit, the PWA will cache essential pages so you can use it without internet.'
+  },
+  {
+    title: 'How accurate are the conversions?',
+    icon: 'teacup' as const,
+    content:
+      'Our conversions use accepted culinary standards and are great for everyday cooking and baking.'
+  },
+  {
+    title: 'How do I print the conversion charts?',
+    icon: 'leaf' as const,
+    content:
+      'Go to Printables → tap Download → open the file → print. All charts are high-resolution and ready to use.'
+  },
+  {
+    title: 'Why do different flour brands weigh differently?',
+    icon: 'mushroom' as const,
+    content:
+      'Humidity, milling style, and storage all affect flour density. Spoon-and-level is the most consistent method.'
+  },
+  {
+    title: 'What’s the easiest way to halve a recipe with 1 egg?',
+    icon: 'leaf' as const,
+    content:
+      'Beat the egg and use half — about 1.5 tablespoons.'
+  },
+  {
+    title: 'Can I substitute baking soda for baking powder?',
+    icon: 'teacup' as const,
+    content:
+      'Sometimes! But you must add an acid (lemon juice or vinegar) to activate the baking soda.'
+  },
+  // NEW ONES:
+  {
+    title: 'Why did my cake turn out dense?',
+    icon: 'mushroom' as const,
+    content:
+      'Common causes: overmixing, expired leaveners, or incorrect flour measurement. Spoon-and-level flour for best results.'
+  },
+  {
+    title: 'Should I weigh ingredients instead of using cups?',
+    icon: 'leaf' as const,
+    content:
+      'Yes — weighing ingredients is more accurate, especially for baking. Even small differences matter in delicate recipes.'
+  },
+  {
+    title: 'How accurate is my oven temperature?',
+    icon: 'teacup' as const,
+    content:
+      'Most home ovens can be off by 10–40°F. An oven thermometer helps ensure consistent baking results.'
+  }
+];
 
   return (
     <div
