@@ -3,6 +3,7 @@ import { getDividerForPage } from "@/lib/dividers";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import calculatorBanner from "@/assets/banners/calculator-banner.png";
+import { loadTemplateFile } from "@/lib/templateLoader";
 
 export default function Calculator() {
   const location = useLocation();
@@ -17,24 +18,24 @@ export default function Calculator() {
   /* ----------------------------------------
      1. TEMPLATE PREFILL SYSTEM
   ---------------------------------------- */
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const templateName = params.get("template");
-    const shouldPrefill = params.get("prefill") === "true";
+  
 
-    if (templateName && shouldPrefill) {
-      import(`../templates/${templateName}-template.json`)
-        .then((template) => {
-          if (template.calculator) {
-            setAmount(template.calculator.amount || "");
-            setFromUnit(template.calculator.fromUnit || "");
-            setToUnit(template.calculator.toUnit || "");
-            setIngredient(template.calculator.ingredient || "");
-          }
-        })
-        .catch((err) => console.error("Template load error:", err));
-    }
-  }, [location.search]);
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const templateName = params.get("template");
+  const shouldPrefill = params.get("prefill") === "true";
+
+  if (templateName && shouldPrefill) {
+    loadTemplateFile(templateName).then((template) => {
+      if (template?.calculator) {
+        setAmount(template.calculator.amount || "");
+        setFromUnit(template.calculator.fromUnit || "");
+        setToUnit(template.calculator.toUnit || "");
+        setIngredient(template.calculator.ingredient || "");
+      }
+    });
+  }
+}, [location.search]);
 
   /* ----------------------------------------
      2. STANDARD CONVERSION LOGIC

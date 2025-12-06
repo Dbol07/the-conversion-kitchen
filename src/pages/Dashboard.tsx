@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 import FloralDivider from "../components/FloralDivider";
+import { getAllTemplates } from "@/lib/templateLoader";
+
 
 // Banner
 import dashboardBanner from "@/assets/banners/dashboard-banner.png";
 
 // Template thumbnails
-import cookieThumb from "@/assets/templates/cookie-template-thumb.png";
-import cakeThumb from "@/assets/templates/cake-template-thumb.png";
-import breadThumb from "@/assets/templates/bread-template-thumb.png";
+const templates = getAllTemplates();
 
 // Icons
 import iconHome from "@/assets/icons/nav/nav-home.png";
@@ -94,48 +94,24 @@ export default function Dashboard() {
         <FloralDivider variant="floral" />
 
         {/* TEMPLATE GRID */}
-        <div className="grid grid-cols-3 gap-6 mt-6">
+       <div className="grid grid-cols-3 gap-6 mt-6">
+  {templates.map(t => (
+    <Link
+      key={t.id}
+      to={`/calculator?template=${t.id}&prefill=true`}
+      className="template-card flex flex-col items-center hover:-translate-y-1 transition"
+    >
+      <img
+        src={t.thumb}
+        alt={`${t.name} template preview`}
+        loading="lazy"
+        className="w-full rounded-lg shadow"
+      />
+      <p className="mt-2 text-lg font-medium text-[#4b3b2f]">{t.name}</p>
+    </Link>
+  ))}
+</div>
 
-          <Link
-            to="/calculator?template=cookie&prefill=true"
-            className="template-card flex flex-col items-center hover:-translate-y-1 transition"
-          >
-            <img
-              src={cookieThumb}
-              alt="Cookie template preview"
-              loading="lazy"
-              className="w-full rounded-lg shadow"
-            />
-            <p className="mt-2 text-lg font-medium text-[#4b3b2f]">Cookie</p>
-          </Link>
-
-          <Link
-            to="/calculator?template=cake&prefill=true"
-            className="template-card flex flex-col items-center hover:-translate-y-1 transition"
-          >
-            <img
-              src={cakeThumb}
-              alt="Cake template preview"
-              loading="lazy"
-              className="w-full rounded-lg shadow"
-            />
-            <p className="mt-2 text-lg font-medium text-[#4b3b2f]">Cake</p>
-          </Link>
-
-          <Link
-            to="/calculator?template=bread&prefill=true"
-            className="template-card flex flex-col items-center hover:-translate-y-1 transition"
-          >
-            <img
-              src={breadThumb}
-              alt="Bread template preview"
-              loading="lazy"
-              className="w-full rounded-lg shadow"
-            />
-            <p className="mt-2 text-lg font-medium text-[#4b3b2f]">Bread</p>
-          </Link>
-
-        </div>
       </div>
     </div>
   );
