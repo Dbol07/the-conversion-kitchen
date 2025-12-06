@@ -2,32 +2,37 @@ import { Link } from "react-router-dom";
 import FloralDivider from "../components/FloralDivider";
 import { getAllTemplates } from "@/lib/templateLoader";
 
+// Background
+import bgMain from "@/assets/backgrounds/bg-main.jpg";
 
 // Banner
 import dashboardBanner from "@/assets/banners/dashboard-banner.png";
 
-// Template thumbnails
-const templates = getAllTemplates();
-
 // Icons
-import iconHome from "@/assets/icons/nav/nav-home.png";
 import iconCalc from "@/assets/icons/nav/nav-calculator.png";
 import iconGuide from "@/assets/icons/nav/nav-guide.png";
 import iconRecipes from "@/assets/icons/nav/nav-recipes.png";
 import iconPrint from "@/assets/icons/nav/nav-printables.png";
-import iconAbout from "@/assets/icons/nav/nav-about.png";
-import iconFaq from "@/assets/icons/nav/nav-faq.png";
+
+const templates = getAllTemplates();
 
 export default function Dashboard() {
   return (
-    <div className="dashboard-page p-6 max-w-5xl mx-auto">
+    <div
+      className="min-h-screen pb-24 page-transition"
+      style={{
+        backgroundImage: `url(${bgMain})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
 
-      {/* ⭐ Top Banner with Overlaid Title */}
-      <div className="relative w-full max-w-4xl mx-auto mb-6 mt-2">
+      {/* ⭐ Top Banner */}
+      <div className="relative w-full max-w-4xl mx-auto pt-6 mb-6">
         <img
           src={dashboardBanner}
           alt="Dashboard Banner"
-          className="w-full rounded-xl shadow-xl object-cover"
+          className="w-full rounded-xl shadow-xl"
         />
         <h1 className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-[#4b3b2f] drop-shadow-lg">
           The Conversion Kitchen
@@ -36,18 +41,13 @@ export default function Dashboard() {
 
       <FloralDivider variant="vine" size="md" />
 
-      {/* ⭐ QUICK TOOLS BOX */}
-      <div className="parchment-card p-6 mb-10 border border-[#e4d5b8] shadow-xl">
+      {/* ⭐ QUICK TOOLS */}
+      <div className="max-w-4xl mx-auto parchment-card p-6 mt-6 shadow-xl border border-[#e4d5b8]">
         <h2 className="text-xl font-semibold text-center mb-4 text-[#4b3b2f]">
           Quick Tools
         </h2>
 
-        <div className="grid grid-cols-3 gap-4 text-center">
-
-          <Link to="/" className="quicktool-btn">
-            <img src={iconHome} className="w-10 h-10 mx-auto mb-1" />
-            <span>Home</span>
-          </Link>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
 
           <Link to="/calculator" className="quicktool-btn">
             <img src={iconCalc} className="w-10 h-10 mx-auto mb-1" />
@@ -69,49 +69,60 @@ export default function Dashboard() {
             <span>Printables</span>
           </Link>
 
-          <Link to="/about" className="quicktool-btn">
-            <img src={iconAbout} className="w-10 h-10 mx-auto mb-1" />
-            <span>About</span>
-          </Link>
-
-          <Link to="/faq" className="quicktool-btn col-span-3">
-            <img src={iconFaq} className="w-10 h-10 mx-auto mb-1" />
-            <span>FAQ</span>
-          </Link>
         </div>
       </div>
 
-      {/* ⭐ TEMPLATE INSPIRATION */}
-      <div className="bg-white/80 p-6 rounded-xl shadow-md border border-[#e4d5b8]">
-        <h2 className="text-2xl font-semibold mb-4 text-center text-[#4b3b2f]">
+      {/* ⭐ TEMPLATE PREVIEW SECTION */}
+      <div className="max-w-4xl mx-auto bg-white/85 p-6 rounded-xl shadow-md border border-[#e4d5b8] mt-10">
+        <h2 className="text-2xl font-semibold mb-2 text-center text-[#4b3b2f]">
           Cozy Recipe Inspiration
         </h2>
 
         <p className="text-center mb-6 text-gray-700">
-          Start cooking with one of our beginner-friendly templates.
+          Explore a few sample recipes crafted for cozy baking days.
         </p>
 
         <FloralDivider variant="floral" />
 
-        {/* TEMPLATE GRID */}
-       <div className="grid grid-cols-3 gap-6 mt-6">
-  {templates.map(t => (
-    <Link
-      key={t.id}
-      to={`/calculator?template=${t.id}&prefill=true`}
-      className="template-card flex flex-col items-center hover:-translate-y-1 transition"
-    >
-      <img
-        src={t.thumb}
-        alt={`${t.name} template preview`}
-        loading="lazy"
-        className="w-full rounded-lg shadow"
-      />
-      <p className="mt-2 text-lg font-medium text-[#4b3b2f]">{t.name}</p>
-    </Link>
-  ))}
-</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
 
+          {templates.map((t) => (
+            <div
+              key={t.id}
+              className="flex flex-col items-center bg-white/90 p-4 rounded-xl shadow-lg border border-[#e4d5b8]"
+            >
+              <img
+                src={t.thumb}
+                alt={t.name}
+                className="w-full rounded-lg shadow mb-3"
+                loading="lazy"
+              />
+
+              <p className="text-lg font-medium text-[#4b3b2f] mb-2">{t.name}</p>
+
+              <div className="flex flex-col w-full gap-2">
+
+                {/* View full template page */}
+                <Link
+                  to={`/template/${t.id}`}
+                  className="w-full py-2 text-center rounded-xl bg-amber-200 hover:bg-amber-300 transition shadow font-semibold text-[#4b3b2f]"
+                >
+                  View Recipe
+                </Link>
+
+                {/* Open in Calculator */}
+                <Link
+                  to={`/calculator?template=${t.id}`}
+                  className="w-full py-2 text-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow font-semibold"
+                >
+                  Open in Calculator
+                </Link>
+
+              </div>
+            </div>
+          ))}
+
+        </div>
       </div>
     </div>
   );
