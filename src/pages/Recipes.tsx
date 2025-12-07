@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FloralDivider from "@/components/FloralDivider";
 
+const API_KEY = import.meta.env.VITE_SPOONACULAR_KEY as string;
+
 interface Recipe {
   id: number;
   title: string;
@@ -13,207 +15,162 @@ interface Recipe {
   vegetarian: boolean;
   vegan: boolean;
   dishTypes: string[];
-  summary?: string;
 }
 
-/* ---------------------------
-   COZY HELPER
----------------------------- */
-
-function isCozyRecipe(r: Recipe) {
-  const cozyDishTypes = [
-    "dessert",
-    "breakfast",
-    "brunch",
-    "bread",
-    "snack",
-    "teatime",
-  ];
-
-  const lowerTypes = (r.dishTypes || []).map((t) => t.toLowerCase());
-  if (cozyDishTypes.some((w) => lowerTypes.includes(w))) return true;
-
-  const title = r.title.toLowerCase();
-  const cozyWords = [
-    "soup",
-    "stew",
-    "casserole",
-    "cookie",
-    "cake",
-    "muffin",
-    "cinnamon",
-    "cozy",
-    "warm",
-    "spice",
-  ];
-  if (cozyWords.some((w) => title.includes(w))) return true;
-
-  return false;
-}
-
-/* ---------------------------
-   TAG GENERATION
----------------------------- */
-
-function buildTags(r: Recipe) {
+/** Build small set of tags for the cards */
+function buildTags(r: Recipe): string[] {
   const tags: string[] = [];
 
-  // diets
   r.diets?.forEach((d) => tags.push(d));
-
-  // cuisines
   r.cuisines?.forEach((c) => tags.push(c));
 
-  // dishTypes (a few cozy-friendly ones)
-  (r.dishTypes || [])
-    .filter((t) =>
-      ["dessert", "breakfast", "bread", "snack", "soup"].includes(
-        t.toLowerCase()
-      )
-    )
-    .forEach((t) => tags.push(t));
-
-  // quick / weeknight
-  if (r.readyInMinutes <= 20) tags.push("quick");
-  else if (r.readyInMinutes <= 35) tags.push("weeknight");
-
-  // healthy
   if (r.veryHealthy) tags.push("healthy");
-
-  // veg flag
-  if (r.vegetarian && !r.vegan) tags.push("vegetarian");
+  if (r.vegetarian) tags.push("vegetarian");
   if (r.vegan) tags.push("vegan");
-
-  // cozy marker
-  if (isCozyRecipe(r)) tags.push("cozy");
 
   return tags.slice(0, 6);
 }
 
-/* ---------------------------
-   MAIN COMPONENT
----------------------------- */
+/** Apply cozy filter client-side */
+function applyCozyFilter(list: Recipe[], cozyOnly: boolean): Recipe[] {
+  if (!cozyOnly) return list;
+
+  const cozyKeywords = [
+    "dessert",
+    "cookie",
+    "cake",
+    "brownie",
+    "pie",
+    "cinnamon",
+    "muffin",
+    "bread",
+    "loaf",
+    "pancake",
+    "waffle",
+    "breakfast",
+    "sweet",
+    "warm",
+    "cozy",
+  ];
+
+  return list.filter((r) => {
+    const title = r.title?.toLowerCase() || "";
+    const dishTypes = (r.dishTypes || []).join(" ").toLowerCase();
+
+    return cozyKeywords.some(
+      (word) => title.includes(word) || dishTypes.includes(word)
+    );
+  });
+}
 
 export default function Recipes() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filtered, setFiltered] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // filters
+  // search + filters
   const [search, setSearch] = useState("");
   const [maxTime, setMaxTime] = useState<number | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedDiet, setSelectedDiet] = useState("");
-  const [cozyPreferred, setCozyPreferred] = useState(false);
+  const [cozyOnly, setCozyOnly] = useState(false);
 
-  const cacheKey = "recipesCache_v2";
+  /** Core fetch helper — used for initial load and Apply Filters */
+  async function fetchRecipesFromApi(options?: {
+    search?: string;
+    maxTime?: number | null;
+    cuisine?: string;
+    diet?: string;
+    cozy?: boolean;
+  }) {
+    const {
+      search: s = "",
+      maxTime: mt = null,
+      cuisine = "",
+      diet = "",
+      cozy = false,
+    } = options || {};
 
-  useEffect(() => {
-    async function loadRecipes() {
-      setLoading(true);
+    setLoading(true);
+    setError(null);
 
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        const parsed: Recipe[] = JSON.parse(cached);
-        setRecipes(parsed);
-        setFiltered(parsed);
-        setLoading(false);
-        return;
+    try {
+      const params = new URLSearchParams();
+      params.set("apiKey", API_KEY);
+      params.set("number", "60"); // Option B – better variety
+      params.set("addRecipeInformation", "true");
+      params.set("instructionsRequired", "true");
+
+      if (s.trim()) {
+        params.set("query", s.trim());
+      }
+      if (mt) {
+        params.set("maxReadyTime", String(mt));
+      }
+      if (cuisine) {
+        params.set("cuisine", cuisine);
+      }
+      if (diet) {
+        params.set("diet", diet);
       }
 
-      try {
-        const res = await fetch(
-          `https://api.spoonacular.com/recipes/complexSearch?apiKey=${
-            import.meta.env.VITE_SPOONACULAR_KEY
-          }&number=40&addRecipeInformation=true`
-        );
+      const url = `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`;
+      const res = await fetch(url);
 
-        const data = await res.json();
-        const list: Recipe[] = data.results || [];
-
-        sessionStorage.setItem(cacheKey, JSON.stringify(list));
-        setRecipes(list);
-        setFiltered(list);
-      } catch (err) {
-        console.error("Error loading recipes:", err);
-        setRecipes([]);
-        setFiltered([]);
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
       }
 
+      const data = await res.json();
+      const results: Recipe[] = data.results || [];
+
+      setRecipes(results);
+
+      // Apply cozy filter client-side
+      const finalList = applyCozyFilter(results, cozy);
+      setFiltered(finalList);
+    } catch (err) {
+      console.error("Error loading recipes:", err);
+      setError("Sorry, we couldn't load recipes right now. Please try again.");
+      setRecipes([]);
+      setFiltered([]);
+    } finally {
       setLoading(false);
     }
-
-    loadRecipes();
-  }, []);
-
-  /* ---------------------------
-     HYBRID FILTERING (Option C)
-  ---------------------------- */
-
-  function applyFilters() {
-    let out = [...recipes];
-
-    const searchTerm = search.trim().toLowerCase();
-
-    // 1) SEARCH: strict
-    if (searchTerm) {
-      out = out.filter((r) => {
-        const title = r.title?.toLowerCase() || "";
-        const summary = r.summary?.toLowerCase() || "";
-        return (
-          title.includes(searchTerm) ||
-          summary.includes(searchTerm)
-        );
-      });
-    }
-
-    // 2) Cuisine: strict, case-insensitive
-    if (selectedCuisine) {
-      const chosen = selectedCuisine.toLowerCase();
-      out = out.filter((r) =>
-        (r.cuisines || [])
-          .map((c) => c.toLowerCase())
-          .includes(chosen)
-      );
-    }
-
-    // 3) Diet: strict, case-insensitive
-    if (selectedDiet) {
-      const chosen = selectedDiet.toLowerCase();
-      out = out.filter((r) =>
-        (r.diets || [])
-          .map((d) => d.toLowerCase())
-          .includes(chosen)
-      );
-    }
-
-    // 4) Max time: strict
-    if (maxTime) {
-      out = out.filter((r) => r.readyInMinutes <= maxTime);
-    }
-
-    // 5) Cozy preference: SOFT BOOST (not a filter)
-    if (cozyPreferred) {
-      out = out
-        .slice()
-        .sort((a, b) => Number(isCozyRecipe(b)) - Number(isCozyRecipe(a)));
-    }
-
-    setFiltered(out);
   }
 
-  function resetFilters() {
+  // Initial load – no filters, no search
+  useEffect(() => {
+    fetchRecipesFromApi({ cozy: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Apply Filters / Search (Hybrid mode)
+  async function handleApplyFilters() {
+    await fetchRecipesFromApi({
+      search,
+      maxTime,
+      cuisine: selectedCuisine,
+      diet: selectedDiet,
+      cozy: cozyOnly,
+    });
+  }
+
+  function handleReset() {
     setSearch("");
     setMaxTime(null);
     setSelectedCuisine("");
     setSelectedDiet("");
-    setCozyPreferred(false);
-    setFiltered(recipes);
+    setCozyOnly(false);
+    fetchRecipesFromApi({
+      search: "",
+      maxTime: null,
+      cuisine: "",
+      diet: "",
+      cozy: false,
+    });
   }
-
-  /* ---------------------------
-     RENDER
-  ---------------------------- */
 
   return (
     <div className="max-w-5xl mx-auto p-6 pb-24">
@@ -223,42 +180,49 @@ export default function Recipes() {
 
       <FloralDivider variant="vine" size="md" />
 
-      {/* FILTERS */}
+      {/* FILTER PANEL */}
       <div className="mt-6 bg-white/90 border border-[#e4d5b8] rounded-xl p-5 shadow">
-        <h2 className="text-xl font-semibold text-[#4b3b2f] mb-3">
+        <h2 className="text-xl font-semibold text-[#4b3b2f] mb-1 text-center">
           Find Something Cozy to Cook
         </h2>
+        <p className="text-sm text-center text-[#5f3c43] mb-4">
+          Search by name, then narrow things down by time, cuisine, diet, or
+          cozy-bakes only.
+        </p>
 
-        {/* Search */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-[#4b3b2f] mb-1">
-            Search by name
-          </label>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="e.g. cinnamon, soup, cake..."
-            className="w-full p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
-          />
-        </div>
+        {/* Search by name */}
+        <label className="block text-sm font-medium mb-1 text-[#4b3b2f]">
+          Search by name
+        </label>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleApplyFilters();
+            }
+          }}
+          placeholder="e.g. cinnamon cake"
+          className="w-full p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4] mb-4"
+        />
 
-        {/* Filter row */}
+        {/* Row of selects */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Max time */}
           <div>
-            <label className="text-sm font-medium mb-1 block">
-              Max Time
-            </label>
+            <label className="text-sm font-medium mb-1 block">Max Time</label>
             <select
-              value={maxTime || ""}
-              onChange={(e) =>
-                setMaxTime(e.target.value ? Number(e.target.value) : null)
-              }
+              value={maxTime ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setMaxTime(val ? Number(val) : null);
+              }}
               className="w-full p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
             >
               <option value="">Any</option>
-              <option value="20">≤ 20 minutes</option>
+              <option value="15">≤ 15 minutes</option>
               <option value="30">≤ 30 minutes</option>
               <option value="45">≤ 45 minutes</option>
             </select>
@@ -266,9 +230,7 @@ export default function Recipes() {
 
           {/* Cuisine */}
           <div>
-            <label className="text-sm font-medium mb-1 block">
-              Cuisine
-            </label>
+            <label className="text-sm font-medium mb-1 block">Cuisine</label>
             <select
               value={selectedCuisine}
               onChange={(e) => setSelectedCuisine(e.target.value)}
@@ -277,17 +239,15 @@ export default function Recipes() {
               <option value="">Any</option>
               <option value="italian">Italian</option>
               <option value="american">American</option>
+              <option value="asian">Asian</option>
               <option value="french">French</option>
               <option value="mediterranean">Mediterranean</option>
-              <option value="asian">Asian</option>
             </select>
           </div>
 
           {/* Diet */}
           <div>
-            <label className="text-sm font-medium mb-1 block">
-              Diet
-            </label>
+            <label className="text-sm font-medium mb-1 block">Diet</label>
             <select
               value={selectedDiet}
               onChange={(e) => setSelectedDiet(e.target.value)}
@@ -305,83 +265,95 @@ export default function Recipes() {
         {/* Cozy toggle */}
         <div className="mt-4 flex items-center gap-2">
           <input
+            id="cozy-only"
             type="checkbox"
-            checked={cozyPreferred}
-            onChange={(e) => setCozyPreferred(e.target.checked)}
+            checked={cozyOnly}
+            onChange={(e) => setCozyOnly(e.target.checked)}
             className="w-4 h-4"
           />
-          <label className="text-sm text-[#5f3c43]">
+          <label htmlFor="cozy-only" className="text-sm text-[#5f3c43]">
             Prefer cozy bakes (desserts, breakfast, warm & comforting dishes)
           </label>
         </div>
 
-        {/* Buttons */}
-        <div className="mt-4 flex flex-col sm:flex-row gap-3">
+        {/* Action buttons */}
+        <div className="mt-4 flex flex-wrap gap-3">
           <button
-            onClick={applyFilters}
-            className="flex-1 py-2 rounded-xl bg-emerald-600 text-white font-semibold shadow hover:bg-emerald-700"
+            type="button"
+            onClick={handleApplyFilters}
+            className="flex-1 min-w-[140px] px-4 py-2 rounded-xl bg-[#3c6150] text-white font-semibold shadow hover:bg-[#2c493c] transition"
           >
             Apply Filters
           </button>
           <button
-            onClick={resetFilters}
-            className="flex-1 py-2 rounded-xl bg-[#f2ebd7] text-[#4b3b2f] font-semibold border border-[#e4d5b8] hover:bg-[#e4d5b8]"
+            type="button"
+            onClick={handleReset}
+            className="flex-1 min-w-[140px] px-4 py-2 rounded-xl bg-[#f2ebd7] text-[#4b3b2f] font-semibold border border-[#e4d5b8] hover:bg-[#e6dcc5] transition"
           >
             Reset
           </button>
         </div>
       </div>
 
-      {/* LOADING */}
+      {/* Loading */}
       {loading && (
         <div className="text-center mt-10 text-[#4b3b2f]">
           Loading recipes…
         </div>
       )}
 
-      {/* RESULTS GRID */}
-      {!loading && (
+      {/* Error */}
+      {!loading && error && (
+        <div className="text-center mt-8 text-[#8b3c3c] bg-[#fde2e2] border border-[#f5c2c2] rounded-xl px-4 py-3">
+          {error}
+        </div>
+      )}
+
+      {/* Results grid */}
+      {!loading && !error && (
         <>
-          {filtered.length === 0 && (
-            <div className="text-center mt-10 text-[#5f3c43]">
+          {filtered.length === 0 ? (
+            <p className="mt-10 text-center text-[#5f3c43]">
               No recipes found. Try loosening your filters or clearing search.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
+              {filtered.map((r) => (
+                <Link
+                  key={r.id}
+                  to={`/recipes/${r.id}`}
+                  className="bg-white/90 border border-[#e4d5b8] rounded-xl shadow hover:shadow-lg transition p-3"
+                >
+                  <img
+                    src={r.image}
+                    className="w-full rounded-lg mb-3 shadow"
+                    alt={r.title}
+                  />
+
+                  <h3 className="text-lg font-semibold text-[#4b3b2f] mb-1">
+                    {r.title}
+                  </h3>
+
+                  <p className="text-sm text-[#5f3c43] mb-2">
+                    {r.readyInMinutes} min
+                    {r.vegetarian && " • vegetarian"}
+                    {r.vegan && " • vegan"}
+                  </p>
+
+                  <div className="flex flex-wrap gap-1 text-xs text-[#5f3c43]">
+                    {buildTags(r).map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 bg-[#faf3e2] text-[#4b3b2f] rounded-full text-xs border border-[#e4d5b8]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </Link>
+              ))}
             </div>
           )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-            {filtered.map((r) => (
-              <Link
-                key={r.id}
-                to={`/recipes/${r.id}`}
-                className="bg-white/90 border border-[#e4d5b8] rounded-xl shadow hover:shadow-lg transition p-3 flex flex-col"
-              >
-                <img
-                  src={r.image}
-                  className="w-full rounded-lg mb-3 shadow"
-                  alt={r.title}
-                />
-
-                <h3 className="text-lg font-semibold text-[#4b3b2f] mb-1">
-                  {r.title}
-                </h3>
-
-                <p className="text-sm text-[#5f3c43] mb-2">
-                  Ready in {r.readyInMinutes} min
-                </p>
-
-                <div className="flex flex-wrap gap-2 mt-auto">
-                  {buildTags(r).map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2 py-1 bg-[#faf3e2] text-[#4b3b2f] rounded-full text-xs border border-[#e4d5b8]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </Link>
-            ))}
-          </div>
         </>
       )}
     </div>
