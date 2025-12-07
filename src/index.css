@@ -91,3 +91,23 @@
 }
 
 html { scroll-behavior: smooth; }
+.card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.btn-soft {
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.btn-soft:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+<div className="card-hover shadow-md rounded-xl p-4">…</div>
+<button className="btn-soft bg-emerald-600 text-white px-4 py-2 rounded-xl">…</button>

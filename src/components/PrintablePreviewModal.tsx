@@ -15,6 +15,15 @@ export default function PrintablePreviewModal({
 }: Props) {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+<motion.div
+  initial={{ opacity: 0, scale: 0.95 }}
+  animate={{ opacity: 1, scale: 1 }}
+  exit={{ opacity: 0, scale: 0.9 }}
+  transition={{ duration: 0.25 }}
+  className="bg-white/95 rounded-xl p-6 shadow-xl border border-[#e4d5b8]"
+>
+  {/* modal content */}
+</motion.div>
 
   // Render preview onto canvas with watermark
   useEffect(() => {

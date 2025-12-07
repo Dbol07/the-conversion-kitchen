@@ -19,36 +19,34 @@ const templates = getAllTemplates();
 export default function Dashboard() {
   return (
     <div
-      className="min-h-screen pb-24 page-transition"
+      className="min-h-screen pb-24"
       style={{
         backgroundImage: `url(${bgMain})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
     >
-
-      {/* ⭐ Top Banner */}
+      {/* Banner */}
       <div className="relative w-full max-w-4xl mx-auto pt-6 mb-6">
         <img
           src={dashboardBanner}
           alt="Dashboard Banner"
-          className="w-full rounded-xl shadow-xl"
+          className="w-full rounded-xl shadow-xl object-cover"
         />
-        <h1 className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-[#4b3b2f] drop-shadow-lg">
+        <h1 className="absolute inset-0 flex items-center justify-center text-3xl sm:text-4xl font-bold text-[#4b3b2f] drop-shadow-lg">
           The Conversion Kitchen
         </h1>
       </div>
 
       <FloralDivider variant="vine" size="md" />
 
-      {/* ⭐ QUICK TOOLS */}
+      {/* QUICK TOOLS */}
       <div className="max-w-4xl mx-auto parchment-card p-6 mt-6 shadow-xl border border-[#e4d5b8]">
         <h2 className="text-xl font-semibold text-center mb-4 text-[#4b3b2f]">
           Quick Tools
         </h2>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-
           <Link to="/calculator" className="quicktool-btn">
             <img src={iconCalc} className="w-10 h-10 mx-auto mb-1" />
             <span>Calculator</span>
@@ -68,11 +66,10 @@ export default function Dashboard() {
             <img src={iconPrint} className="w-10 h-10 mx-auto mb-1" />
             <span>Printables</span>
           </Link>
-
         </div>
       </div>
 
-      {/* ⭐ TEMPLATE PREVIEW SECTION */}
+      {/* RECIPES PREVIEW */}
       <div className="max-w-4xl mx-auto bg-white/85 p-6 rounded-xl shadow-md border border-[#e4d5b8] mt-10">
         <h2 className="text-2xl font-semibold mb-2 text-center text-[#4b3b2f]">
           Cozy Recipe Inspiration
@@ -85,7 +82,6 @@ export default function Dashboard() {
         <FloralDivider variant="floral" />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
-
           {templates.map((t) => (
             <div
               key={t.id}
@@ -100,28 +96,14 @@ export default function Dashboard() {
 
               <p className="text-lg font-medium text-[#4b3b2f] mb-2">{t.name}</p>
 
-              <div className="flex flex-col w-full gap-2">
-
-                {/* View full template page */}
-                <Link
-                  to={`/template/${t.id}`}
-                  className="w-full py-2 text-center rounded-xl bg-amber-200 hover:bg-amber-300 transition shadow font-semibold text-[#4b3b2f]"
-                >
-                  View Recipe
-                </Link>
-
-                {/* Open in Calculator */}
-                <Link
-                  to={`/calculator?template=${t.id}`}
-                  className="w-full py-2 text-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow font-semibold"
-                >
-                  Open in Calculator
-                </Link>
-
-              </div>
+              <Link
+                to={`/template/${t.id}`}
+                className="w-full py-2 text-center rounded-xl bg-amber-200 hover:bg-amber-300 transition shadow font-semibold text-[#4b3b2f]"
+              >
+                View Recipe
+              </Link>
             </div>
           ))}
-
         </div>
       </div>
     </div>

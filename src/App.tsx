@@ -4,8 +4,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
-
 import AppLayout from "./components/AppLayout";
+import PageWrapper from "@/components/PageWrapper";
+
+<Route
+  path="/dashboard"
+  element={
+    <PageWrapper>
+      <Dashboard />
+    </PageWrapper>
+  }
+/>
 
 // Pages
 import Dashboard from "./pages/Dashboard";

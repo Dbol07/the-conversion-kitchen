@@ -1,89 +1,92 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
-import cookieFull from "@/assets/templates/cookie-template-full.png";
-import cakeFull from "@/assets/templates/cake-template-full.png";
-import breadFull from "@/assets/templates/bread-template-full.png";
-
-// Background
-import floralParchment from "@/assets/backgrounds/parchment-floral.jpg";
-
-const TEMPLATE_MAP: Record<
-  string,
-  { title: string; img: string; templateKey: string }
-> = {
-  cookie: {
-    title: "Cookie Recipe Template",
-    img: cookieFull,
-    templateKey: "cookie",
-  },
-  cake: {
-    title: "Cake Recipe Template",
-    img: cakeFull,
-    templateKey: "cake",
-  },
-  bread: {
-    title: "Bread Recipe Template",
-    img: breadFull,
-    templateKey: "bread",
-  },
-};
+import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
+import { getTemplateById } from "@/lib/templateLoader";
+import FloralDivider from "@/components/FloralDivider";
 
 export default function TemplatePreview() {
   const { name } = useParams();
-  const navigate = useNavigate();
+  const template = getTemplateById(name || "");
+  const [copied, setCopied] = useState(false);
 
-  const selected = name ? TEMPLATE_MAP[name] : null;
-
-  if (!selected) {
+  if (!template) {
     return (
-      <div className="p-10 text-center">
-        <p className="text-xl">Template not found.</p>
-        <Link
-          to="/"
-          className="inline-block mt-4 px-4 py-2 bg-amber-200 rounded shadow"
-        >
-          Back to Dashboard
-        </Link>
+      <div className="p-6 text-center">
+        <p>Template not found.</p>
       </div>
     );
   }
 
+  async function copyIngredients() {
+    try {
+      await navigator.clipboard.writeText(template.ingredients.join("\n"));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  }
+
   return (
-    <div
-      className="min-h-screen py-10 px-4 flex justify-center"
-      style={{
-        backgroundImage: `url(${floralParchment})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <div className="bg-white/90 backdrop-blur-sm max-w-3xl w-full p-6 rounded-2xl shadow-2xl border border-[#d2bfa3]">
-        <h1 className="text-3xl font-bold text-center mb-6 text-[#4b3b2f] drop-shadow">
-          {selected.title}
-        </h1>
+    <div className="max-w-3xl mx-auto p-6 pb-24">
+      {/* Image */}
+      <img
+        src={template.image}
+        alt={template.name}
+        className="w-full rounded-xl shadow-xl mb-6"
+      />
 
-        <div className="w-full mb-6">
-          <img
-            src={selected.img}
-            alt={selected.title}
-            className="w-full rounded-xl shadow-lg"
-          />
+      <h1 className="text-3xl font-bold text-[#4b3b2f] text-center mb-4">
+        {template.name}
+      </h1>
+
+      <FloralDivider variant="floral" size="md" />
+
+      {/* INGREDIENTS */}
+      <div className="bg-white/90 border border-[#e4d5b8] rounded-xl p-5 mt-6 shadow">
+        <h2 className="text-xl font-semibold text-[#4b3b2f] mb-3">Ingredients</h2>
+
+        <ul className="list-disc pl-6 text-[#5f3c43] space-y-1">
+          {template.ingredients.map((ing, idx) => (
+            <li key={idx}>{ing}</li>
+          ))}
+        </ul>
+
+        <button
+          onClick={copyIngredients}
+          className="mt-4 w-full py-2 rounded-xl bg-[#2f6e4f] text-white hover:bg-[#26593f] transition font-semibold"
+        >
+          {copied ? "Copied!" : "Copy Ingredients"}
+        </button>
+      </div>
+
+      {/* INSTRUCTIONS */}
+      {template.instructions && (
+        <div className="bg-white/90 border border-[#e4d5b8] rounded-xl p-5 mt-6 shadow">
+          <h2 className="text-xl font-semibold text-[#4b3b2f] mb-3">
+            Instructions
+          </h2>
+
+          <ol className="list-decimal pl-6 text-[#5f3c43] space-y-2">
+            {template.instructions.map((step, idx) => (
+              <li key={idx}>{step}</li>
+            ))}
+          </ol>
         </div>
+      )}
 
-        <div className="flex justify-between mt-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-5 py-3 bg-rose-200 hover:bg-rose-300 text-[#4b3b2f] rounded-xl shadow-md transition font-medium"
-          >
-            ← Back
-          </button>
+      {/* ACTIONS */}
+      <div className="mt-8 flex flex-col gap-3">
+        <Link
+          to="/calculator"
+          className="w-full py-3 text-center rounded-xl bg-emerald-600 text-white font-semibold shadow hover:bg-emerald-700"
+        >
+          Convert Now →
+        </Link>
 
-          <Link
-            to={`/calculator?template=${selected.templateKey}&prefill=true`}
-            className="px-6 py-3 bg-emerald-200 hover:bg-emerald-300 text-[#4b3b2f] rounded-xl shadow-md transition font-semibold"
-          >
-            Use This Template →
-          </Link>
-        </div>
+        <Link
+          to="/recipes"
+          className="w-full py-3 text-center rounded-xl bg-amber-200 text-[#4b3b2f] font-semibold shadow hover:bg-amber-300"
+        >
+          Browse More Recipes
+        </Link>
       </div>
     </div>
   );
