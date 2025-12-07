@@ -108,4 +108,27 @@ html { scroll-behavior: smooth; }
   transform: translateY(-2px);
   filter: brightness(1.05);
 }
+.serving-highlight {
+  background: #fef3c7;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+  color: #8b5e34;
+}
+
+.related-chip {
+  background: #f2ebd7;
+  border: 1px solid #d9c7a3;
+  padding: 2px 6px;
+  margin: 2px;
+  border-radius: 8px;
+  color: #3c6150;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.related-chip:hover {
+  background: #3c6150;
+  color: white;
+}
 
