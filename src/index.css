@@ -109,5 +109,3 @@ html { scroll-behavior: smooth; }
   filter: brightness(1.05);
 }
 
-<div className="card-hover shadow-md rounded-xl p-4">…</div>
-<button className="btn-soft bg-emerald-600 text-white px-4 py-2 rounded-xl">…</button>
