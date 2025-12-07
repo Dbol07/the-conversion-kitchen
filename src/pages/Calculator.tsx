@@ -1,136 +1,8 @@
 import { useState } from "react";
-import PageDivider from "@/components/PageDivider";
-import { getDividerForPage } from "@/lib/dividers";
+import FloralDivider from "@/components/FlloralDivider";
 import calculatorBanner from "@/assets/banners/calculator-banner.png";
 
 type TabId = "ingredient" | "scale" | "full";
-
-/* -----------------------------
-   UNIT + DENSITY TABLES
-------------------------------*/
-
-const VOLUME_FACTORS_ML: Record<string, number> = {
-  tsp: 5,
-  tbsp: 15,
-  cup: 240,
-  floz: 30,
-  ml: 1,
-  liter: 1000,
-  pint: 473,
-  quart: 946,
-  gallon: 3785,
-  pinch: 0.3,
-  dash: 0.6,
-};
-
-const MASS_FACTORS_G: Record<string, number> = {
-  mg: 0.001,
-  g: 1,
-  kg: 1000,
-  oz: 28.35,
-  lb: 453.6,
-  stone: 6350.29,
-  stick: 113, // 1 US stick of butter ≈ 113 g
-};
-
-const INGREDIENT_DENSITY_G_PER_CUP: Record<string, number> = {
-  flour: 120,
-  sugar: 200,
-  "brown sugar": 210,
-  butter: 227,
-  honey: 340,
-  water: 240,
-  milk: 245,
-  "almond flour": 96,
-  "coconut flour": 112,
-  "powdered sugar": 120,
-  "cocoa powder": 85,
-  oats: 90,
-  "rice flour": 142,
-  oil: 218,
-  yogurt: 245,
-  shortening: 191,
-};
-
-const INGREDIENT_OPTIONS = [
-  { id: "flour", label: "Flour" },
-  { id: "sugar", label: "Granulated sugar" },
-  { id: "brown sugar", label: "Brown sugar" },
-  { id: "powdered sugar", label: "Powdered sugar" },
-  { id: "cocoa powder", label: "Cocoa powder" },
-  { id: "oats", label: "Oats" },
-  { id: "rice flour", label: "Rice flour" },
-  { id: "almond flour", label: "Almond flour" },
-  { id: "coconut flour", label: "Coconut flour" },
-  { id: "butter", label: "Butter" },
-  { id: "shortening", label: "Shortening" },
-  { id: "oil", label: "Oil" },
-  { id: "honey", label: "Honey" },
-  { id: "water", label: "Water" },
-  { id: "milk", label: "Milk" },
-  { id: "yogurt", label: "Yogurt" },
-];
-
-const VOLUME_UNIT_OPTIONS = [
-  { value: "tsp", label: "teaspoons (tsp)" },
-  { value: "tbsp", label: "tablespoons (tbsp)" },
-  { value: "cup", label: "cups" },
-  { value: "floz", label: "fluid ounces (fl oz)" },
-  { value: "ml", label: "milliliters (ml)" },
-  { value: "liter", label: "liters (L)" },
-  { value: "pint", label: "pints (pt)" },
-  { value: "quart", label: "quarts (qt)" },
-  { value: "gallon", label: "gallons (gal)" },
-  { value: "pinch", label: "pinch" },
-  { value: "dash", label: "dash" },
-];
-
-const MASS_UNIT_OPTIONS = [
-  { value: "mg", label: "milligrams (mg)" },
-  { value: "g", label: "grams (g)" },
-  { value: "kg", label: "kilograms (kg)" },
-  { value: "oz", label: "ounces (oz)" },
-  { value: "lb", label: "pounds (lb)" },
-  { value: "stone", label: "stone (UK)" },
-  { value: "stick", label: "sticks of butter" },
-];
-
-/* -----------------------------
-   HELPERS
-------------------------------*/
-
-function isVolumeUnit(unit: string) {
-  return unit in VOLUME_FACTORS_ML;
-}
-
-function isMassUnit(unit: string) {
-  return unit in MASS_FACTORS_G;
-}
-
-function parseFractionalNumber(input: string): number | null {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-
-  // "1 1/2"
-  const mixedMatch = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)$/);
-  if (mixedMatch) {
-    const whole = parseFloat(mixedMatch[1]);
-    const num = parseFloat(mixedMatch[2]);
-    const den = parseFloat(mixedMatch[3]);
-    return whole + num / den;
-  }
-
-  // "1/2"
-  const fracMatch = trimmed.match(/^(\d+)\/(\d+)$/);
-  if (fracMatch) {
-    const num = parseFloat(fracMatch[1]);
-    const den = parseFloat(fracMatch[2]);
-    return num / den;
-  }
-
-  const asFloat = Number(trimmed);
-  return isNaN(asFloat) ? null : asFloat;
-}
 
 interface ParsedLine {
   original: string;
@@ -139,408 +11,701 @@ interface ParsedLine {
   ingredient: string;
 }
 
-function parseRecipeLines(text: string): ParsedLine[] {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const knownUnits = [
-    "tsp",
-    "teaspoon",
-    "teaspoons",
-    "tbsp",
-    "tablespoon",
-    "tablespoons",
-    "cup",
-    "cups",
-    "fl oz",
-    "floz",
-    "ounce",
-    "ounces",
-    "oz",
-    "g",
-    "gram",
-    "grams",
-    "kg",
-    "ml",
-    "milliliter",
-    "milliliters",
-    "liter",
-    "liters",
-    "l",
-    "lb",
-    "pound",
-    "pounds",
-    "mg",
-    "milligram",
-    "milligrams",
-    "pint",
-    "pints",
-    "pt",
-    "quart",
-    "quarts",
-    "qt",
-    "gallon",
-    "gallons",
-    "gal",
-    "pinch",
-    "dash",
-    "stick",
-    "sticks",
-    "stone",
-    "stones",
-  ];
+type System = "us" | "metric";
 
-  return lines.map((line) => {
-    const parts = line.split(/\s+/);
-    if (parts.length === 0) {
-      return { original: line, quantity: null, unit: null, ingredient: line };
-    }
+/* -----------------------------
+   UNIT + DENSITY TABLES
+------------------------------*/
 
-    const qty = parseFractionalNumber(parts[0]);
-    if (qty === null) {
-      return { original: line, quantity: null, unit: null, ingredient: line };
-    }
+const VOLUME_UNITS = [
+  "tsp",
+  "tbsp",
+  "cup",
+  "floz",
+  "ml",
+  "l",
+  "pint",
+  "quart",
+  "gallon",
+  "pinch",
+  "dash",
+];
 
-    let unit: string | null = null;
-    let ingredientStartIndex = 1;
+const MASS_UNITS = ["g", "kg", "mg", "oz", "lb", "stone", "stick"];
 
-    if (parts.length > 1) {
-      const maybeUnit = parts[1].toLowerCase();
-      if (knownUnits.includes(maybeUnit)) {
-        unit = maybeUnit;
-        ingredientStartIndex = 2;
+const VOLUME_FACTORS_ML: Record<string, number> = {
+  tsp: 5,
+  tbsp: 15,
+  cup: 240,
+  floz: 30,
+  ml: 1,
+  l: 1000,
+  pint: 473,
+  quart: 946,
+  gallon: 3785,
+  pinch: 0.3125, // ~ 1/16 tsp
+  dash: 0.625, // ~ 1/8 tsp
+};
+
+const MASS_FACTORS_G: Record<string, number> = {
+  g: 1,
+  kg: 1000,
+  mg: 0.001,
+  oz: 28.3495,
+  lb: 453.592,
+  stone: 6350.29,
+  stick: 113, // 1 stick butter ≈ 113g
+};
+
+/**
+ * Approximate densities in g/ml
+ * (cozy home-baking level accuracy)
+ */
+const DENSITY_G_PER_ML: Record<string, number> = {
+  coconut_flour: 0.47,
+  almond_flour: 0.40,
+  flour: 0.52, // all-purpose
+  sugar: 0.83, // granulated
+  brown_sugar: 0.88,
+  powdered_sugar: 0.50,
+  cocoa: 0.42,
+  oats: 0.38,
+  rice_flour: 0.58,
+  oil: 0.92,
+  yogurt: 1.03,
+  shortening: 0.90,
+};
+
+const INGREDIENT_SYNONYMS: Record<string, string[]> = {
+  coconut_flour: ["coconut flour"],
+  almond_flour: ["almond flour"],
+  flour: ["all-purpose flour", "ap flour", "flour"],
+  sugar: ["granulated sugar", "white sugar", "sugar"],
+  brown_sugar: ["brown sugar", "light brown sugar", "dark brown sugar"],
+  powdered_sugar: [
+    "powdered sugar",
+    "icing sugar",
+    "confectioners sugar",
+    "confectioners' sugar",
+  ],
+  cocoa: ["cocoa powder", "cocoa"],
+  oats: ["rolled oats", "oats", "quick oats", "old-fashioned oats"],
+  rice_flour: ["rice flour"],
+  oil: ["oil", "olive oil", "vegetable oil", "canola oil"],
+  yogurt: ["yogurt", "greek yogurt"],
+  shortening: ["shortening"],
+};
+
+const TABS: { id: TabId; label: string; subtitle: string }[] = [
+  {
+    id: "ingredient",
+    label: "Ingredient Converter",
+    subtitle: "Convert one ingredient between units",
+  },
+  {
+    id: "scale",
+    label: "Scale a Recipe",
+    subtitle: "Scale ingredient amounts by servings",
+  },
+  {
+    id: "full",
+    label: "Full Recipe Converter",
+    subtitle: "US ↔ Metric with smart units",
+  },
+];
+
+/* -----------------------------
+   HELPER FUNCTIONS
+------------------------------*/
+
+function parseAmount(input: string): number | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // e.g. "1 1/2"
+  const mixedMatch = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if (mixedMatch) {
+    const whole = parseFloat(mixedMatch[1]);
+    const num = parseFloat(mixedMatch[2]);
+    const den = parseFloat(mixedMatch[3]) || 1;
+    return whole + num / den;
+  }
+
+  // e.g. "3/4"
+  const fracMatch = trimmed.match(/^(\d+)\/(\d+)$/);
+  if (fracMatch) {
+    const num = parseFloat(fracMatch[1]);
+    const den = parseFloat(fracMatch[2]) || 1;
+    return num / den;
+  }
+
+  const val = Number(trimmed.replace(",", "."));
+  if (Number.isNaN(val)) return null;
+  return val;
+}
+
+function normalizeUnitToken(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const u = raw.toLowerCase().replace(/\./g, "");
+
+  // cups
+  if (["c", "cup", "cups"].includes(u)) return "cup";
+
+  // tsp
+  if (["t", "tsp", "teaspoon", "teaspoons"].includes(u)) return "tsp";
+
+  // tbsp
+  if (["tb", "tbsp", "tbs", "tbl", "tablespoon", "tablespoons"].includes(u))
+    return "tbsp";
+
+  // fl oz
+  if (["floz", "fl", "floz", "fluidounce", "fluidounces"].includes(u))
+    return "floz";
+
+  // ml
+  if (["ml", "milliliter", "milliliters"].includes(u)) return "ml";
+
+  // liter
+  if (["l", "liter", "liters", "litre", "litres"].includes(u)) return "l";
+
+  // pint
+  if (["pt", "pint", "pints"].includes(u)) return "pint";
+
+  // quart
+  if (["qt", "quart", "quarts"].includes(u)) return "quart";
+
+  // gallon
+  if (["gal", "gallon", "gallons"].includes(u)) return "gallon";
+
+  // grams
+  if (["g", "gram", "grams"].includes(u)) return "g";
+
+  // kg
+  if (["kg", "kilogram", "kilograms"].includes(u)) return "kg";
+
+  // mg
+  if (["mg", "milligram", "milligrams"].includes(u)) return "mg";
+
+  // oz
+  if (["oz", "ounce", "ounces"].includes(u)) return "oz";
+
+  // lb
+  if (["lb", "lbs", "pound", "pounds"].includes(u)) return "lb";
+
+  // stone
+  if (["stone", "st"].includes(u)) return "stone";
+
+  // stick
+  if (["stick", "sticks"].includes(u)) return "stick";
+
+  // pinch / dash
+  if (["pinch", "pinches"].includes(u)) return "pinch";
+  if (["dash", "dashes"].includes(u)) return "dash";
+
+  return u;
+}
+
+function isVolumeUnit(u: string | null): boolean {
+  return !!u && VOLUME_UNITS.includes(u);
+}
+
+function isMassUnit(u: string | null): boolean {
+  return !!u && MASS_UNITS.includes(u);
+}
+
+function volumeToMl(amount: number, unit: string): number {
+  const factor = VOLUME_FACTORS_ML[unit];
+  return !factor ? amount : amount * factor;
+}
+
+function massToGrams(amount: number, unit: string): number {
+  const factor = MASS_FACTORS_G[unit];
+  return !factor ? amount : amount * factor;
+}
+
+function mlToMetric(amountMl: number) {
+  return { value: amountMl, unit: "ml" as const };
+}
+
+function gramsToMetric(grams: number) {
+  return { value: grams, unit: "g" as const };
+}
+
+/**
+ * Smart ml → US units (tsp/tbsp/cup) based on size.
+ */
+function mlToUsSmart(amountMl: number) {
+  if (amountMl < 1) {
+    return { value: amountMl, unit: "ml" as const };
+  }
+  if (amountMl < 15) {
+    return { value: amountMl / 5, unit: "tsp" as const };
+  }
+  if (amountMl < 60) {
+    return { value: amountMl / 15, unit: "tbsp" as const };
+  }
+  return { value: amountMl / 240, unit: "cup" as const };
+}
+
+function gramsToUs(grams: number) {
+  return { value: grams / 28.3495, unit: "oz" as const };
+}
+
+/**
+ * Try to find a known ingredient id from arbitrary text.
+ */
+function deduceIngredientId(text: string): string | null {
+  const lower = text.toLowerCase();
+  // order: more specific first
+  const entries = Object.entries(INGREDIENT_SYNONYMS);
+  for (const [id, synonyms] of entries) {
+    for (const syn of synonyms) {
+      if (lower.includes(syn)) {
+        return id;
       }
     }
+  }
+  return null;
+}
 
-    const ingredient = parts.slice(ingredientStartIndex).join(" ") || "";
-    return { original: line, quantity: qty, unit, ingredient };
-  });
+/**
+ * Format amount using hybrid decimals/fractions.
+ */
+function formatAmountForDisplay(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  const integerPart = Math.floor(rounded + 1e-8);
+  let frac = rounded - integerPart;
+
+  const fractionDefs = [
+    { dec: 0.25, sym: "¼" },
+    { dec: 0.33, sym: "⅓" },
+    { dec: 0.5, sym: "½" },
+    { dec: 0.67, sym: "⅔" },
+    { dec: 0.75, sym: "¾" },
+  ];
+
+  let bestMatch: string | null = null;
+  let bestDiff = 0.02;
+
+  for (const f of fractionDefs) {
+    const diff = Math.abs(frac - f.dec);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestMatch = f.sym;
+      frac = f.dec;
+    }
+  }
+
+  if (bestMatch) {
+    if (integerPart === 0) {
+      return bestMatch;
+    }
+    return `${integerPart} ${bestMatch}`;
+  }
+
+  if (Math.abs(rounded - Math.round(rounded)) < 0.01) {
+    return String(Math.round(rounded));
+  }
+
+  return rounded.toFixed(2).replace(/\.00$/, "");
+}
+
+function pluralizeUnit(unit: string, value: number): string {
+  const approxOne = Math.abs(value - 1) < 0.01;
+  if (approxOne) return unit;
+  if (unit === "cup") return "cups";
+  // things like g, ml, oz usually stay the same
+  return unit;
+}
+
+/**
+ * Normalize "2c sugar" → "2 c sugar" etc.
+ */
+function normalizeInlineUnit(line: string): string {
+  return line.replace(/(\d(?:\s+\d+\/\d+)?)\s*([a-zA-Z]+)/, "$1 $2");
+}
+
+/**
+ * Parse a recipe line into {quantity, unit, ingredient}
+ */
+function parseRecipeLine(line: string): ParsedLine {
+  const original = line;
+  let text = line.trim();
+  if (!text) return { original, quantity: null, unit: null, ingredient: "" };
+
+  text = normalizeInlineUnit(text);
+  const parts = text.split(/\s+/);
+  if (!parts.length) {
+    return { original, quantity: null, unit: null, ingredient: "" };
+  }
+
+  const qty = parseAmount(parts[0]);
+  if (qty == null) {
+    return {
+      original,
+      quantity: null,
+      unit: null,
+      ingredient: text,
+    };
+  }
+
+  let unit: string | null = null;
+  let ingredientStartIndex = 1;
+
+  if (parts.length > 1) {
+    const maybeUnitRaw = parts[1];
+    const normalized = normalizeUnitToken(maybeUnitRaw);
+    if (normalized && (isVolumeUnit(normalized) || isMassUnit(normalized))) {
+      unit = normalized;
+      ingredientStartIndex = 2;
+    }
+  }
+
+  const ingredient = parts.slice(ingredientStartIndex).join(" ") || "";
+  return { original, quantity: qty, unit, ingredient };
+}
+
+/**
+ * Convert a single parsed line to target system with smart units.
+ */
+function convertParsedLine(
+  parsed: ParsedLine,
+  system: System
+): string | null {
+  if (parsed.quantity == null) return null;
+  const qty = parsed.quantity;
+  const rawUnit = normalizeUnitToken(parsed.unit || "");
+  const ingredientText = parsed.ingredient;
+
+  const ingredientId = deduceIngredientId(ingredientText || "");
+  const density = ingredientId ? DENSITY_G_PER_ML[ingredientId] : undefined;
+
+  const isVolume = rawUnit && isVolumeUnit(rawUnit);
+  const isMass = rawUnit && isMassUnit(rawUnit);
+
+  // If we can't tell the unit, just leave the line alone.
+  if (!isVolume && !isMass) {
+    return parsed.original;
+  }
+
+  let finalValue: number;
+  let finalUnit: string;
+
+  // VOLUME FLOW
+  if (isVolume) {
+    const ml = volumeToMl(qty, rawUnit!);
+
+    if (system === "metric") {
+      // metric volume
+      const metric = mlToMetric(ml);
+      finalValue = metric.value;
+      finalUnit = metric.unit;
+    } else {
+      // US volume, but if we know density and system is metric weight, we could go to grams.
+      const us = mlToUsSmart(ml);
+      finalValue = us.value;
+      finalUnit = us.unit;
+    }
+  }
+  // MASS FLOW
+  else if (isMass) {
+    const grams = massToGrams(qty, rawUnit!);
+
+    if (system === "metric") {
+      const m = gramsToMetric(grams);
+      finalValue = m.value;
+      finalUnit = m.unit;
+    } else {
+      const us = gramsToUs(grams);
+      finalValue = us.value;
+      finalUnit = us.unit;
+    }
+  } else {
+    return parsed.original;
+  }
+
+  const valueStr = formatAmountForDisplay(finalValue);
+  const unitStr = pluralizeUnit(finalUnit, finalValue);
+
+  const ingredientOut = ingredientText || "";
+  if (!ingredientOut) {
+    return `${valueStr} ${unitStr}`.trim();
+  }
+
+  return `${valueStr} ${unitStr} ${ingredientOut}`.trim();
 }
 
 /* -----------------------------
-   CONVERSION LOGIC
+   COMPONENT
 ------------------------------*/
 
-function convertAmount(
-  amount: number,
-  fromUnit: string,
-  toUnit: string,
-  ingredientId?: string
-): { value: number; note?: string } | { error: string } {
-  // Volume → Volume
-  if (isVolumeUnit(fromUnit) && isVolumeUnit(toUnit)) {
-    const ml = amount * VOLUME_FACTORS_ML[fromUnit];
-    const result = ml / VOLUME_FACTORS_ML[toUnit];
-    return { value: result };
-  }
-
-  // Mass → Mass
-  if (isMassUnit(fromUnit) && isMassUnit(toUnit)) {
-    const g = amount * MASS_FACTORS_G[fromUnit];
-    const result = g / MASS_FACTORS_G[toUnit];
-    return { value: result };
-  }
-
-  // Volume ↔ Mass requires ingredient
-  if (!ingredientId) {
-    return {
-      error: "Please choose an ingredient to convert between volume and weight.",
-    };
-  }
-
-  const density = INGREDIENT_DENSITY_G_PER_CUP[ingredientId];
-  if (!density) {
-    return {
-      error:
-        "This ingredient doesn’t have a density set yet. Try another ingredient or use same-type units.",
-    };
-  }
-
-  const gPerMl = density / VOLUME_FACTORS_ML["cup"];
-
-  // Volume → Mass
-  if (isVolumeUnit(fromUnit) && isMassUnit(toUnit)) {
-    const ml = amount * VOLUME_FACTORS_ML[fromUnit];
-    const grams = ml * gPerMl;
-    const result = grams / MASS_FACTORS_G[toUnit];
-    return {
-      value: result,
-      note: "Approximate conversion based on typical ingredient density.",
-    };
-  }
-
-  // Mass → Volume
-  if (isMassUnit(fromUnit) && isVolumeUnit(toUnit)) {
-    const grams = amount * MASS_FACTORS_G[fromUnit];
-    const ml = grams / gPerMl;
-    const result = ml / VOLUME_FACTORS_ML[toUnit];
-    return {
-      value: result,
-      note: "Approximate conversion based on typical ingredient density.",
-    };
-  }
-
-  return { error: "These units aren’t supported yet." };
-}
-
-function normalizeUnit(rawUnit: string): string | null {
-  const u = rawUnit.toLowerCase();
-
-  if (["tsp", "teaspoon", "teaspoons"].includes(u)) return "tsp";
-  if (["tbsp", "tablespoon", "tablespoons"].includes(u)) return "tbsp";
-  if (["cup", "cups"].includes(u)) return "cup";
-  if (["fl", "floz", "fl-oz", "fl_oz", "fl oz"].includes(u)) return "floz";
-  if (["ml", "milliliter", "milliliters"].includes(u)) return "ml";
-  if (["l", "liter", "liters"].includes(u)) return "liter";
-  if (["pint", "pints", "pt"].includes(u)) return "pint";
-  if (["quart", "quarts", "qt"].includes(u)) return "quart";
-  if (["gallon", "gallons", "gal"].includes(u)) return "gallon";
-  if (["pinch"].includes(u)) return "pinch";
-  if (["dash"].includes(u)) return "dash";
-
-  if (["mg", "milligram", "milligrams"].includes(u)) return "mg";
-  if (["g", "gram", "grams"].includes(u)) return "g";
-  if (["kg", "kilogram", "kilograms"].includes(u)) return "kg";
-  if (["oz", "ounce", "ounces"].includes(u)) return "oz";
-  if (["lb", "pound", "pounds"].includes(u)) return "lb";
-  if (["stone", "stones"].includes(u)) return "stone";
-  if (["stick", "sticks"].includes(u)) return "stick";
-
-  return null;
-}
-
-function prettyUnitLabel(unit: string): string {
-  switch (unit) {
-    case "tsp":
-      return "tsp";
-    case "tbsp":
-      return "tbsp";
-    case "cup":
-      return "cups";
-    case "floz":
-      return "fl oz";
-    case "ml":
-      return "ml";
-    case "liter":
-      return "L";
-    case "pint":
-      return "pt";
-    case "quart":
-      return "qt";
-    case "gallon":
-      return "gal";
-    case "pinch":
-      return "pinch";
-    case "dash":
-      return "dash";
-    case "mg":
-      return "mg";
-    case "g":
-      return "g";
-    case "kg":
-      return "kg";
-    case "oz":
-      return "oz";
-    case "lb":
-      return "lb";
-    case "stone":
-      return "stone";
-    case "stick":
-      return "sticks";
-    default:
-      return unit;
-  }
-}
-
-function guessIngredientId(text: string): string | null {
-  const lower = text.toLowerCase();
-  for (const key of Object.keys(INGREDIENT_DENSITY_G_PER_CUP)) {
-    if (lower.includes(key)) return key;
-  }
-  return null;
-}
-
-/* =============================
-   MAIN COMPONENT
-============================= */
-
 export default function Calculator() {
-  const dividerImage = getDividerForPage("calculator");
-  const [tab, setTab] = useState<TabId>("ingredient");
+  const [activeTab, setActiveTab] = useState<TabId>("ingredient");
 
   /* INGREDIENT CONVERTER STATE */
-  const [ingAmount, setIngAmount] = useState("");
-  const [ingFromUnit, setIngFromUnit] = useState("");
-  const [ingToUnit, setIngToUnit] = useState("");
-  const [ingIngredient, setIngIngredient] = useState("");
-  const [ingResult, setIngResult] = useState<string | null>(null);
-  const [ingNote, setIngNote] = useState<string | null>(null);
-  const [ingError, setIngError] = useState<string | null>(null);
+  const [amount, setAmount] = useState("");
+  const [fromUnit, setFromUnit] = useState("");
+  const [toUnit, setToUnit] = useState("");
+  const [ingredientText, setIngredientText] = useState("");
+  const [ingredientNote, setIngredientNote] = useState<string | null>(null);
+  const [convResult, setConvResult] = useState<string | null>(null);
+  const [convError, setConvError] = useState<string | null>(null);
+  const [convCopied, setConvCopied] = useState(false);
 
-  /* RECIPE SCALER STATE */
-  const [origServings, setOrigServings] = useState("");
-  const [newServings, setNewServings] = useState("");
+  /* SCALE RECIPE STATE */
+  const [scaleOriginalServings, setScaleOriginalServings] = useState("4");
+  const [scaleNewServings, setScaleNewServings] = useState("8");
   const [scaleInput, setScaleInput] = useState("");
-  const [scaleOutput, setScaleOutput] = useState<string[] | null>(null);
+  const [scaleOutput, setScaleOutput] = useState("");
   const [scaleError, setScaleError] = useState<string | null>(null);
   const [scaleCopied, setScaleCopied] = useState(false);
 
   /* FULL RECIPE CONVERTER STATE */
   const [fullInput, setFullInput] = useState("");
-  const [fullTargetSystem, setFullTargetSystem] = useState<"metric" | "us">(
-    "metric"
-  );
-  const [fullOutput, setFullOutput] = useState<string[] | null>(null);
+  const [fullOutput, setFullOutput] = useState("");
+  const [fullSystem, setFullSystem] = useState<System>("us");
   const [fullError, setFullError] = useState<string | null>(null);
   const [fullCopied, setFullCopied] = useState(false);
 
   /* -----------------------------
-     HANDLERS
+     INGREDIENT CONVERTER LOGIC
   ------------------------------*/
 
   function handleIngredientConvert() {
-    setIngError(null);
-    setIngResult(null);
-    setIngNote(null);
+    setConvError(null);
+    setConvResult(null);
+    setIngredientNote(null);
 
-    const amount = parseFractionalNumber(ingAmount);
-    if (amount === null || amount <= 0) {
-      setIngError("Please enter a valid amount.");
-      return;
-    }
-    if (!ingFromUnit || !ingToUnit) {
-      setIngError("Please select both units.");
+    const qty = parseAmount(amount);
+    if (qty == null || qty <= 0) {
+      setConvError("Please enter a valid amount (like 1, 2.5, or 3/4).");
       return;
     }
 
-    const result = convertAmount(
-      amount,
-      ingFromUnit,
-      ingToUnit,
-      ingIngredient || undefined
-    );
+    const from = normalizeUnitToken(fromUnit);
+    const to = normalizeUnitToken(toUnit);
 
-    if ("error" in result) {
-      setIngError(result.error);
+    if (!from || !to) {
+      setConvError("Please select both From and To units.");
       return;
     }
 
-    const rounded = Math.round(result.value * 100) / 100;
-    setIngResult(`${rounded} ${prettyUnitLabel(ingToUnit)}`);
-    if (result.note) setIngNote(result.note);
+    const fromIsVol = isVolumeUnit(from);
+    const fromIsMass = isMassUnit(from);
+    const toIsVol = isVolumeUnit(to);
+    const toIsMass = isMassUnit(to);
+
+    if (!fromIsVol && !fromIsMass) {
+      setConvError("Unknown starting unit. Try tsp, tbsp, cup, g, oz, etc.");
+      return;
+    }
+    if (!toIsVol && !toIsMass) {
+      setConvError("Unknown target unit. Try tsp, tbsp, cup, g, oz, etc.");
+      return;
+    }
+
+    let ingredientId: string | null = null;
+    if (ingredientText.trim()) {
+      ingredientId = deduceIngredientId(ingredientText);
+      if (ingredientId) {
+        const primaryName = INGREDIENT_SYNONYMS[ingredientId][0] || ingredientId;
+        setIngredientNote(`Detected ingredient: ${primaryName}`);
+      } else {
+        setIngredientNote("Ingredient not recognized, using basic unit conversion.");
+      }
+    }
+
+    const density =
+      ingredientId && DENSITY_G_PER_ML[ingredientId]
+        ? DENSITY_G_PER_ML[ingredientId]
+        : undefined;
+
+    // Same dimension → direct
+    if (fromIsVol && toIsVol) {
+      const ml = volumeToMl(qty, from);
+      const resultAmount = ml / VOLUME_FACTORS_ML[to];
+      setConvResult(
+        `${formatAmountForDisplay(resultAmount)} ${pluralizeUnit(to, resultAmount)}`
+      );
+      return;
+    }
+
+    if (fromIsMass && toIsMass) {
+      const grams = massToGrams(qty, from);
+      const resultAmount = grams / MASS_FACTORS_G[to];
+      setConvResult(
+        `${formatAmountForDisplay(resultAmount)} ${pluralizeUnit(to, resultAmount)}`
+      );
+      return;
+    }
+
+    // Cross dimension: need density
+    if (!density) {
+      setConvError(
+        "To convert between volume and weight, please type a known ingredient (flour, sugar, oats, etc.)."
+      );
+      return;
+    }
+
+    if (fromIsVol && toIsMass) {
+      const ml = volumeToMl(qty, from);
+      const grams = ml * density;
+      const resultAmount = grams / MASS_FACTORS_G[to];
+      setConvResult(
+        `${formatAmountForDisplay(resultAmount)} ${pluralizeUnit(to, resultAmount)}`
+      );
+      return;
+    }
+
+    if (fromIsMass && toIsVol) {
+      const grams = massToGrams(qty, from);
+      const ml = grams / density;
+      const resultAmount = ml / VOLUME_FACTORS_ML[to];
+      setConvResult(
+        `${formatAmountForDisplay(resultAmount)} ${pluralizeUnit(to, resultAmount)}`
+      );
+      return;
+    }
+
+    setConvError("Unable to convert with the given combination.");
   }
+
+  function handleIngredientClear() {
+    setAmount("");
+    setFromUnit("");
+    setToUnit("");
+    setIngredientText("");
+    setConvResult(null);
+    setConvError(null);
+    setIngredientNote(null);
+    setConvCopied(false);
+  }
+
+  async function handleIngredientCopy() {
+    if (!convResult) return;
+    try {
+      await navigator.clipboard.writeText(convResult);
+      setConvCopied(true);
+      setTimeout(() => setConvCopied(false), 1500);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /* -----------------------------
+     SCALE RECIPE LOGIC
+  ------------------------------*/
 
   function handleScaleRecipe() {
     setScaleError(null);
-    setScaleOutput(null);
+    setScaleOutput("");
+
+    const origServings = Number(scaleOriginalServings);
+    const newServings = Number(scaleNewServings);
+
+    if (!origServings || !newServings || origServings <= 0 || newServings <= 0) {
+      setScaleError("Please enter valid original and new servings.");
+      return;
+    }
+
+    if (!scaleInput.trim()) {
+      setScaleError("Paste your ingredient list to scale.");
+      return;
+    }
+
+    const lines = scaleInput.split(/\r?\n/);
+    const factor = newServings / origServings;
+    const outLines: string[] = [];
+
+    for (const line of lines) {
+      if (!line.trim()) {
+        outLines.push("");
+        continue;
+      }
+
+      const parsed = parseRecipeLine(line);
+      if (parsed.quantity == null) {
+        outLines.push(parsed.original);
+        continue;
+      }
+
+      const newQty = parsed.quantity * factor;
+      const qtyStr = formatAmountForDisplay(newQty);
+      const unitStr = parsed.unit ? ` ${parsed.unit}` : "";
+      const ingredient = parsed.ingredient ? ` ${parsed.ingredient}` : "";
+
+      outLines.push(`${qtyStr}${unitStr}${ingredient}`.trim());
+    }
+
+    const header = `Original servings: ${origServings}\nNew servings: ${newServings}\n\n`;
+    const body = outLines.join("\n");
+    setScaleOutput(header + body);
+  }
+
+  function handleScaleClear() {
+    setScaleOutput("");
+    setScaleInput("");
+    setScaleError(null);
     setScaleCopied(false);
-
-    const orig = Number(origServings);
-    const next = Number(newServings);
-    if (!orig || !next || orig <= 0 || next <= 0) {
-      setScaleError("Please enter both original and new servings.");
-      return;
-    }
-
-    const factor = next / orig;
-    const parsed = parseRecipeLines(scaleInput);
-    if (!parsed.length) {
-      setScaleError("Add at least one ingredient line to scale.");
-      return;
-    }
-
-    const lines = parsed.map((line) => {
-      if (line.quantity == null) return line.original;
-
-      const newQty = Math.round(line.quantity * factor * 100) / 100;
-      const qtyStr = newQty % 1 === 0 ? newQty.toString() : newQty.toString();
-      const unitStr = line.unit ? ` ${line.unit}` : "";
-      const ingredientStr = line.ingredient ? ` ${line.ingredient}` : "";
-      return `${qtyStr}${unitStr}${ingredientStr}`;
-    });
-
-    setScaleOutput(lines);
   }
 
-  async function handleCopyScaled() {
-    if (!scaleOutput?.length) return;
+  async function handleScaleCopy() {
+    if (!scaleOutput) return;
     try {
-      await navigator.clipboard.writeText(scaleOutput.join("\n"));
+      await navigator.clipboard.writeText(scaleOutput);
       setScaleCopied(true);
-      setTimeout(() => setScaleCopied(false), 2000);
+      setTimeout(() => setScaleCopied(false), 1500);
     } catch {
-      // silently fail; no-op
+      /* ignore */
     }
   }
+
+  /* -----------------------------
+     FULL RECIPE CONVERTER LOGIC
+  ------------------------------*/
 
   function handleFullConvert() {
     setFullError(null);
-    setFullOutput(null);
+    setFullOutput("");
     setFullCopied(false);
 
-    const parsed = parseRecipeLines(fullInput);
-    if (!parsed.length) {
-      setFullError("Paste a recipe first.");
+    if (!fullInput.trim()) {
+      setFullError("Paste a recipe ingredient list to convert.");
       return;
     }
 
-    const lines: string[] = [];
+    const lines = fullInput.split(/\r?\n/);
+    const outLines: string[] = [];
 
-    for (const line of parsed) {
-      if (line.quantity == null || !line.unit) {
-        lines.push(line.original);
+    for (const line of lines) {
+      if (!line.trim()) {
+        outLines.push("");
         continue;
       }
 
-      const normalizedUnit = normalizeUnit(line.unit);
-      if (!normalizedUnit) {
-        lines.push(line.original);
-        continue;
-      }
-
-      let targetUnit: string;
-      if (fullTargetSystem === "metric") {
-        targetUnit = isVolumeUnit(normalizedUnit) ? "ml" : "g";
-      } else {
-        targetUnit = isVolumeUnit(normalizedUnit) ? "cup" : "oz";
-      }
-
-      const ingredientId = guessIngredientId(line.ingredient);
-      const result = convertAmount(
-        line.quantity,
-        normalizedUnit,
-        targetUnit,
-        ingredientId || undefined
-      );
-
-      if ("error" in result) {
-        lines.push(line.original);
-        continue;
-      }
-
-      const rounded = Math.round(result.value * 100) / 100;
-      const qtyStr = rounded % 1 === 0 ? rounded.toString() : rounded.toString();
-      const unitLabel = prettyUnitLabel(targetUnit);
-      const ingredientStr = line.ingredient ? ` ${line.ingredient}` : "";
-      lines.push(`${qtyStr} ${unitLabel}${ingredientStr}`);
+      const parsed = parseRecipeLine(line);
+      const converted = convertParsedLine(parsed, fullSystem);
+      outLines.push(converted ?? parsed.original);
     }
 
-    setFullOutput(lines);
+    setFullOutput(outLines.join("\n"));
   }
 
   function handleFullClear() {
     setFullInput("");
-    setFullOutput(null);
+    setFullOutput("");
     setFullError(null);
     setFullCopied(false);
   }
 
-  async function handleCopyFull() {
-    if (!fullOutput?.length) return;
+  async function handleFullCopy() {
+    if (!fullOutput) return;
     try {
-      await navigator.clipboard.writeText(fullOutput.join("\n"));
+      await navigator.clipboard.writeText(fullOutput);
       setFullCopied(true);
-      setTimeout(() => setFullCopied(false), 2000);
+      setTimeout(() => setFullCopied(false), 1500);
     } catch {
-      // silently fail
+      /* ignore */
     }
   }
 
@@ -549,353 +714,345 @@ export default function Calculator() {
   ------------------------------*/
 
   return (
-    <div className="min-h-screen bg-[#faf6f0] pb-32">
+    <div className="max-w-4xl mx-auto p-4 pb-24">
       {/* Banner */}
-      <div className="relative w-full max-w-4xl mx-auto mt-6">
+      <div className="relative w-full mb-6">
         <img
           src={calculatorBanner}
-          alt="Calculator Banner"
-          className="w-full rounded-xl shadow-xl"
+          alt="Calculator banner"
+          className="w-full rounded-2xl shadow-lg object-cover"
         />
-        <h1 className="absolute inset-0 flex items-center justify-center text-3xl sm:text-4xl font-bold text-[#4b3b2f] drop-shadow-lg text-center px-4">
-          Recipe Conversion Calculator
-        </h1>
-      </div>
-
-      {/* Divider */}
-      <div className="flex justify-center mt-6">
-        <PageDivider src={dividerImage} size="md" />
-      </div>
-
-      {/* Main Card */}
-      <div className="max-w-3xl mx-auto bg-white/95 border border-[#e4d5b8] rounded-3xl shadow-xl p-4 sm:p-6 mt-8">
-        {/* Tabs */}
-        <div className="flex justify-between gap-2 mb-4 bg-[#faf3e2] rounded-2xl p-1">
-          <button
-            onClick={() => setTab("ingredient")}
-            className={`flex-1 py-2 px-3 rounded-2xl text-sm sm:text-base font-semibold transition-all ${
-              tab === "ingredient"
-                ? "bg-white shadow-md text-[#1b302c]"
-                : "text-[#5f3c43] hover:bg-white/60"
-            }`}
-          >
-            🥄 Ingredient Converter
-          </button>
-          <button
-            onClick={() => setTab("scale")}
-            className={`flex-1 py-2 px-3 rounded-2xl text-sm sm:text-base font-semibold transition-all ${
-              tab === "scale"
-                ? "bg-white shadow-md text-[#1b302c]"
-                : "text-[#5f3c43] hover:bg-white/60"
-            }`}
-          >
-            🍲 Scale a Recipe
-          </button>
-          <button
-            onClick={() => setTab("full")}
-            className={`flex-1 py-2 px-3 rounded-2xl text-sm sm:text-base font-semibold transition-all ${
-              tab === "full"
-                ? "bg-white shadow-md text-[#1b302c]"
-                : "text-[#5f3c43] hover:bg-white/60"
-            }`}
-          >
-            📜 Full Recipe Converter
-          </button>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">
+            Recipe Conversion Calculator
+          </h1>
+          <p className="text-sm sm:text-base text-white/90 mt-2 max-w-xl">
+            Convert ingredients, scale recipes, and switch between US & Metric —
+            all in one cozy tool.
+          </p>
         </div>
+      </div>
 
-        {/* Tab Content */}
-        {tab === "ingredient" && (
-          <section className="mt-4 space-y-3">
-            <p className="text-sm text-[#5f3c43] mb-2">
-              Convert a single ingredient between volume and weight. Choose an
-              ingredient when switching between cups and grams/ounces.
+      <FloralDivider variant="vine" size="sm" />
+
+      {/* Tabs */}
+      <div className="mt-4 flex flex-wrap gap-2 justify-center">
+        {TABS.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-2 rounded-2xl border text-sm sm:text-base transition ${
+                active
+                  ? "bg-emerald-700 text-white border-emerald-800 shadow"
+                  : "bg-[#fffaf4] text-[#4b3b2f] border-[#e4d5b8] hover:bg-[#f5ebdc]"
+              }`}
+            >
+              <div className="font-semibold">{tab.label}</div>
+              <div className="text-xs opacity-80">{tab.subtitle}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* CONTENT */}
+      <div className="mt-6 bg-white/90 border border-[#e4d5b8] rounded-2xl shadow-lg p-5">
+        {activeTab === "ingredient" && (
+          <>
+            <h2 className="text-xl font-semibold text-[#4b3b2f] mb-3">
+              Ingredient Converter
+            </h2>
+            <p className="text-sm text-[#5f3c43] mb-4">
+              Convert between cups, grams, ounces, and more. For volume↔weight
+              conversions, type the ingredient so we can guess the density.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block font-medium mb-1 text-sm">
+                <label className="block text-sm font-medium mb-1">
                   Amount
                 </label>
                 <input
-                  type="text"
-                  value={ingAmount}
-                  onChange={(e) => setIngAmount(e.target.value)}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
                   className="w-full p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
                   placeholder="e.g. 1 1/2"
                 />
               </div>
 
               <div>
-                <label className="block font-medium mb-1 text-sm">
-                  From unit
+                <label className="block text-sm font-medium mb-1">
+                  From
                 </label>
                 <select
-                  value={ingFromUnit}
-                  onChange={(e) => setIngFromUnit(e.target.value)}
+                  value={fromUnit}
+                  onChange={(e) => setFromUnit(e.target.value)}
                   className="w-full p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
                 >
-                  <option value="">Select…</option>
-                  <optgroup label="Volume">
-                    {VOLUME_UNIT_OPTIONS.map((u) => (
-                      <option key={u.value} value={u.value}>
-                        {u.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Weight">
-                    {MASS_UNIT_OPTIONS.map((u) => (
-                      <option key={u.value} value={u.value}>
-                        {u.label}
-                      </option>
-                    ))}
-                  </optgroup>
+                  <option value="">Select unit</option>
+                  <option value="tsp">tsp</option>
+                  <option value="tbsp">tbsp</option>
+                  <option value="cup">cup</option>
+                  <option value="floz">fl oz</option>
+                  <option value="ml">ml</option>
+                  <option value="l">liter</option>
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                  <option value="oz">oz</option>
+                  <option value="lb">lb</option>
+                  <option value="stick">stick (butter)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-medium mb-1 text-sm">
-                  To unit
+                <label className="block text-sm font-medium mb-1">
+                  To
                 </label>
                 <select
-                  value={ingToUnit}
-                  onChange={(e) => setIngToUnit(e.target.value)}
+                  value={toUnit}
+                  onChange={(e) => setToUnit(e.target.value)}
                   className="w-full p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
                 >
-                  <option value="">Select…</option>
-                  <optgroup label="Volume">
-                    {VOLUME_UNIT_OPTIONS.map((u) => (
-                      <option key={u.value} value={u.value}>
-                        {u.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Weight">
-                    {MASS_UNIT_OPTIONS.map((u) => (
-                      <option key={u.value} value={u.value}>
-                        {u.label}
-                      </option>
-                    ))}
-                  </optgroup>
+                  <option value="">Select unit</option>
+                  <option value="tsp">tsp</option>
+                  <option value="tbsp">tbsp</option>
+                  <option value="cup">cup</option>
+                  <option value="floz">fl oz</option>
+                  <option value="ml">ml</option>
+                  <option value="l">liter</option>
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                  <option value="oz">oz</option>
+                  <option value="lb">lb</option>
+                  <option value="stick">stick (butter)</option>
                 </select>
               </div>
             </div>
 
-            <div>
-              <label className="block font-medium mb-1 text-sm">
-                Ingredient (for volume ↔ weight)
+            <div className="mt-4">
+              <label className="block text-sm font-medium mb-1">
+                Ingredient (optional, helps with volume↔weight)
               </label>
-              <select
-                value={ingIngredient}
-                onChange={(e) => setIngIngredient(e.target.value)}
+              <input
+                value={ingredientText}
+                onChange={(e) => setIngredientText(e.target.value)}
                 className="w-full p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
-              >
-                <option value="">
-                  Optional — choose when converting cups ↔ grams/oz
-                </option>
-                {INGREDIENT_OPTIONS.map((ing) => (
-                  <option key={ing.id} value={ing.id}>
-                    {ing.label}
-                  </option>
-                ))}
-              </select>
+                placeholder="e.g. all-purpose flour, brown sugar, oats…"
+              />
+              {ingredientNote && (
+                <p className="text-xs text-[#3c6150] mt-1">{ingredientNote}</p>
+              )}
             </div>
 
-            <button
-              onClick={handleIngredientConvert}
-              className="mt-2 w-full py-3 bg-[#2f6e4f] text-white rounded-2xl shadow-md hover:bg-[#26593f] transition font-semibold"
-            >
-              Convert
-            </button>
+            <div className="mt-4 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleIngredientConvert}
+                className="flex-1 py-2 rounded-xl bg-emerald-700 text-white font-semibold shadow hover:bg-emerald-800"
+              >
+                Convert
+              </button>
+              <button
+                onClick={handleIngredientClear}
+                className="flex-1 py-2 rounded-xl bg-[#f2ebd7] text-[#4b3b2f] font-semibold border border-[#e4d5b8] hover:bg-[#e4d5b8]"
+              >
+                Clear
+              </button>
+              <button
+                onClick={handleIngredientCopy}
+                disabled={!convResult}
+                className="flex-1 py-2 rounded-xl bg-amber-200 text-[#4b3b2f] font-semibold border border-[#e4d5b8] hover:bg-amber-300 disabled:opacity-50"
+              >
+                {convCopied ? "Copied!" : "Copy result"}
+              </button>
+            </div>
 
-            {ingResult && (
-              <div className="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-center text-sm">
-                <p className="font-semibold text-[#1b302c] mb-1">
-                  Result: {ingResult}
-                </p>
-                {ingNote && (
-                  <p className="text-xs text-[#5f3c43] mt-1">{ingNote}</p>
-                )}
+            {convResult && (
+              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-emerald-800 font-semibold">
+                {convResult}
               </div>
             )}
 
-            {ingError && (
-              <div className="mt-3 p-3 rounded-2xl bg-red-50 border border-red-200 text-center text-red-700 text-sm">
-                {ingError}
+            {convError && (
+              <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-xl text-center text-red-700">
+                {convError}
               </div>
             )}
-          </section>
+          </>
         )}
 
-        {tab === "scale" && (
-          <section className="mt-4 space-y-3">
-            <p className="text-sm text-[#5f3c43] mb-2">
-              Paste your ingredient list and scale it up or down for a new
-              serving size.
+        {activeTab === "scale" && (
+          <>
+            <h2 className="text-xl font-semibold text-[#4b3b2f] mb-3">
+              Scale a Recipe
+            </h2>
+            <p className="text-sm text-[#5f3c43] mb-4">
+              Paste your ingredient list, then adjust original and new servings.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block font-medium mb-1 text-sm">
+                <label className="block text-sm font-medium mb-1">
                   Original servings
                 </label>
                 <input
-                  type="number"
-                  value={origServings}
-                  onChange={(e) => setOrigServings(e.target.value)}
+                  value={scaleOriginalServings}
+                  onChange={(e) => setScaleOriginalServings(e.target.value)}
                   className="w-full p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
-                  min={1}
                 />
               </div>
               <div>
-                <label className="block font-medium mb-1 text-sm">
+                <label className="block text-sm font-medium mb-1">
                   New servings
                 </label>
                 <input
-                  type="number"
-                  value={newServings}
-                  onChange={(e) => setNewServings(e.target.value)}
+                  value={scaleNewServings}
+                  onChange={(e) => setScaleNewServings(e.target.value)}
                   className="w-full p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
-                  min={1}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block font-medium mb-1 text-sm">
-                Recipe ingredients
-              </label>
-              <textarea
-                value={scaleInput}
-                onChange={(e) => setScaleInput(e.target.value)}
-                rows={6}
-                className="w-full p-3 rounded-2xl border border-[#e4d5b8] bg-[#fffaf4] text-sm"
-                placeholder={`e.g.\n2 cups flour\n1/2 cup sugar\n1 tbsp vanilla`}
-              />
+            <label className="block text-sm font-medium mb-1">
+              Ingredients (one per line)
+            </label>
+            <textarea
+              value={scaleInput}
+              onChange={(e) => setScaleInput(e.target.value)}
+              className="w-full min-h-[140px] p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
+              placeholder="e.g.&#10;1 cup flour&#10;1/2 cup sugar&#10;2 tbsp butter"
+            />
+
+            <div className="mt-4 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleScaleRecipe}
+                className="flex-1 py-2 rounded-xl bg-emerald-700 text-white font-semibold shadow hover:bg-emerald-800"
+              >
+                Scale recipe
+              </button>
+              <button
+                onClick={handleScaleClear}
+                className="flex-1 py-2 rounded-xl bg-[#f2ebd7] text-[#4b3b2f] font-semibold border border-[#e4d5b8] hover:bg-[#e4d5b8]"
+              >
+                Clear
+              </button>
+              <button
+                onClick={handleScaleCopy}
+                disabled={!scaleOutput}
+                className="flex-1 py-2 rounded-xl bg-amber-200 text-[#4b3b2f] font-semibold border border-[#e4d5b8] hover:bg-amber-300 disabled:opacity-50"
+              >
+                {scaleCopied ? "Copied!" : "Copy scaled list"}
+              </button>
             </div>
 
-            <button
-              onClick={handleScaleRecipe}
-              className="mt-2 w-full py-3 bg-[#2f6e4f] text-white rounded-2xl shadow-md hover:bg-[#26593f] transition font-semibold"
-            >
-              Scale recipe
-            </button>
-
             {scaleOutput && (
-              <div className="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-[#1b302c]">
-                    Scaled ingredients
-                  </p>
-                  <button
-                    onClick={handleCopyScaled}
-                    className="px-3 py-1 text-xs rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
-                  >
-                    {scaleCopied ? "Copied!" : "Copy list"}
-                  </button>
-                </div>
-                <pre className="whitespace-pre-wrap font-mono text-xs sm:text-sm">
-                  {scaleOutput.join("\n")}
-                </pre>
+              <div className="mt-4">
+                <label className="block text-sm font-medium mb-1">
+                  Scaled ingredients
+                </label>
+                <textarea
+                  readOnly
+                  value={scaleOutput}
+                  className="w-full min-h-[140px] p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
+                />
               </div>
             )}
 
             {scaleError && (
-              <div className="mt-3 p-3 rounded-2xl bg-red-50 border border-red-200 text-center text-red-700 text-sm">
+              <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-xl text-center text-red-700">
                 {scaleError}
               </div>
             )}
-          </section>
+          </>
         )}
 
-        {tab === "full" && (
-          <section className="mt-4 space-y-3">
-            <p className="text-sm text-[#5f3c43] mb-2">
-              Paste a full recipe and convert ingredient amounts to metric or
-              US-style units. We’ll do our best to detect quantities and units.
+        {activeTab === "full" && (
+          <>
+            <h2 className="text-xl font-semibold text-[#4b3b2f] mb-3">
+              Full Recipe Converter
+            </h2>
+            <p className="text-sm text-[#5f3c43] mb-4">
+              Paste a full ingredient list (one per line). We&apos;ll use smart
+              units and hybrid rounding for cozy, cookbook-style output.
             </p>
 
-            <div className="flex flex-wrap gap-3 items-center">
-              <span className="text-sm font-medium text-[#1b302c]">
-                Convert to:
+            <div className="mb-3 flex flex-wrap gap-3 items-center">
+              <span className="text-sm font-medium text-[#4b3b2f]">
+                Target style:
               </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFullTargetSystem("metric")}
-                  className={`px-3 py-1 rounded-full text-sm border ${
-                    fullTargetSystem === "metric"
-                      ? "bg-emerald-600 text-white border-emerald-700"
-                      : "bg-[#fffaf4] text-[#1b302c] border-[#e4d5b8]"
-                  }`}
-                >
-                  Metric (g / ml)
-                </button>
-                <button
-                  onClick={() => setFullTargetSystem("us")}
-                  className={`px-3 py-1 rounded-full text-sm border ${
-                    fullTargetSystem === "us"
-                      ? "bg-emerald-600 text-white border-emerald-700"
-                      : "bg-[#fffaf4] text-[#1b302c] border-[#e4d5b8]"
-                  }`}
-                >
-                  US (cups / oz)
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1 text-sm">
-                Original recipe
+              <label className="text-sm flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="system"
+                  value="us"
+                  checked={fullSystem === "us"}
+                  onChange={() => setFullSystem("us")}
+                />
+                US-friendly (cups, tsp, oz)
               </label>
-              <textarea
-                value={fullInput}
-                onChange={(e) => setFullInput(e.target.value)}
-                rows={8}
-                className="w-full p-3 rounded-2xl border border-[#e4d5b8] bg-[#fffaf4] text-sm"
-                placeholder={`e.g.\n2 cups flour\n1/2 cup sugar\n1/4 cup butter, melted\n1 tsp vanilla extract`}
-              />
+              <label className="text-sm flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="system"
+                  value="metric"
+                  checked={fullSystem === "metric"}
+                  onChange={() => setFullSystem("metric")}
+                />
+                Metric-friendly (g, ml)
+              </label>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <label className="block text-sm font-medium mb-1">
+              Original recipe (one ingredient per line)
+            </label>
+            <textarea
+              value={fullInput}
+              onChange={(e) => setFullInput(e.target.value)}
+              className="w-full min-h-[160px] p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
+              placeholder="e.g.&#10;1 cup flour&#10;1/2 cup sugar&#10;2 tbsp butter"
+            />
+
+            <div className="mt-4 flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleFullConvert}
-                className="flex-1 min-w-[140px] py-3 bg-[#2f6e4f] text-white rounded-2xl shadow-md hover:bg-[#26593f] transition font-semibold"
+                className="flex-1 py-2 rounded-xl bg-emerald-700 text-white font-semibold shadow hover:bg-emerald-800"
               >
-                Convert full recipe
+                Convert recipe
               </button>
               <button
-                type="button"
                 onClick={handleFullClear}
-                className="flex-1 min-w-[120px] py-3 bg-[#f2ebd7] text-[#5f3c43] rounded-2xl border border-[#e4d5b8] hover:bg-[#e4d5b8] transition text-sm font-medium"
+                className="flex-1 py-2 rounded-xl bg-[#f2ebd7] text-[#4b3b2f] font-semibold border border-[#e4d5b8] hover:bg-[#e4d5b8]"
               >
-                Clear text
+                Clear
+              </button>
+              <button
+                onClick={handleFullCopy}
+                disabled={!fullOutput}
+                className="flex-1 py-2 rounded-xl bg-amber-200 text-[#4b3b2f] font-semibold border border-[#e4d5b8] hover:bg-amber-300 disabled:opacity-50"
+              >
+                {fullCopied ? "Copied!" : "Copy converted recipe"}
               </button>
             </div>
 
             {fullOutput && (
-              <div className="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-[#1b302c]">
-                    Converted recipe
-                  </p>
-                  <button
-                    onClick={handleCopyFull}
-                    className="px-3 py-1 text-xs rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
-                  >
-                    {fullCopied ? "Copied!" : "Copy recipe"}
-                  </button>
-                </div>
-                <pre className="whitespace-pre-wrap font-mono text-xs sm:text-sm">
-                  {fullOutput.join("\n")}
-                </pre>
+              <div className="mt-4">
+                <label className="block text-sm font-medium mb-1">
+                  Converted recipe
+                </label>
+                <textarea
+                  readOnly
+                  value={fullOutput}
+                  className="w-full min-h-[160px] p-2 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
+                />
               </div>
             )}
 
             {fullError && (
-              <div className="mt-3 p-3 rounded-2xl bg-red-50 border border-red-200 text-center text-red-700 text-sm">
+              <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-xl text-center text-red-700">
                 {fullError}
               </div>
             )}
-          </section>
+          </>
         )}
       </div>
     </div>
