@@ -1,5 +1,5 @@
 import { useState } from "react";
-import FloralDivider from "@/components/FlloralDivider";
+import FloralDivider from "@/components/FloralDivider";
 import calculatorBanner from "@/assets/banners/calculator-banner.png";
 
 type TabId = "ingredient" | "scale" | "full";
