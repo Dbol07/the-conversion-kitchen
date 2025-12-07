@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import FloralDivider from "@/components/FloralDivider";
-
+import recipesBanner from "@/assets/banners/recipes-banner.png";
 const API_KEY = import.meta.env.VITE_SPOONACULAR_KEY as string;
 
 /* ------------ Recipe Result Type ------------ */
@@ -184,32 +184,52 @@ export default function Recipes() {
 
   /* ---------- Render ---------- */
   return (
-    <div className="max-w-5xl mx-auto p-6 pb-24">
+    <div className="max-w-5xl mx-auto p-0 pb-24">
 
-      {/* PAGE TITLE */}
-      <h1 className="text-3xl font-bold text-center text-[#4b3b2f]">
-        Recipe Collections
-      </h1>
+      {/* ⭐ PAGE BANNER */}
+      <div
+        className="w-full h-40 sm:h-48 md:h-56 relative flex items-center justify-center mb-4 rounded-b-2xl overflow-hidden shadow"
+      >
+        <img
+          src={recipesBanner}
+          alt="Recipes Banner"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-[#1b302c]/35" />
+
+        <h1 className="relative z-10 text-3xl sm:text-4xl font-bold text-white drop-shadow-lg text-center">
+          Recipe Collections
+        </h1>
+      </div>
 
       <FloralDivider variant="vine" size="md" />
 
       {/* FILTER PANEL */}
       <div className="mt-6 bg-white/90 border border-[#e4d5b8] rounded-xl p-5 shadow">
-        
+
         {/* Header */}
         <h2 className="text-xl font-semibold text-center text-[#4b3b2f] mb-2">
           Find Something Cozy to Cook
         </h2>
 
-        {/* Search bar */}
-        <label className="text-sm font-medium">Search by name</label>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && applyFilters()}
-          className="w-full p-2 mt-1 mb-4 rounded-xl border border-[#e4d5b8] bg-[#fffaf4]"
-          placeholder="e.g. cinnamon cake"
-        />
+        {/* ⭐ SEARCH BAR WITH GO BUTTON */}
+        <div className="relative w-full">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+            className="w-full p-3 pr-16 rounded-xl border border-[#e4d5b8] bg-[#fffaf4] text-[#4b3b2f]"
+            placeholder="e.g. cinnamon cake"
+          />
+          <button
+            onClick={applyFilters}
+            className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1 rounded-lg bg-[#3c6150] text-white font-semibold shadow hover:bg-[#2c493c] transition"
+          >
+            Go →
+          </button>
+        </div>
+
+        {/* (KEEP the rest of filter panel here: maxTime, pills, cozy toggle, buttons) */}
 
         {/* MAX TIME */}
         <div className="mb-4">
@@ -238,12 +258,13 @@ export default function Recipes() {
                 key={c}
                 type="button"
                 onClick={() => toggleCuisine(c)}
-                className={`px-3 py-1 rounded-full border transition text-sm
-                  ${
-                    active
-                      ? "bg-[#3c6150] text-white border-[#3c6150]"
-                      : "bg-[#f2ebd7] text-[#4b3b2f] border-[#d9c7a3]"
-                  }`}
+               className={`px-4 py-1.5 rounded-full border text-sm shadow-sm transition-transform
+  ${
+    active
+      ? "bg-[#3c6150] text-white border-[#3c6150] scale-[1.03] shadow-md"
+      : "bg-[#f7f1e3] text-[#4b3b2f] border-[#d9c7a3] hover:bg-[#f0e6cf] shadow"
+  }`}
+
               >
                 {c}
               </button>
@@ -258,18 +279,19 @@ export default function Recipes() {
             const active = selectedDiets.includes(d);
             return (
               <button
-                key={d}
-                type="button"
-                onClick={() => toggleDiet(d)}
-                className={`px-3 py-1 rounded-full border transition text-sm
-                  ${
-                    active
-                      ? "bg-[#3c6150] text-white border-[#3c6150]"
-                      : "bg-[#f2ebd7] text-[#4b3b2f] border-[#d9c7a3]"
-                  }`}
-              >
-                {d}
-              </button>
+  key={d}
+  type="button"
+  onClick={() => toggleDiet(d)}
+  className={`px-4 py-1.5 rounded-full border text-sm shadow-sm transition-transform
+    ${
+      active
+        ? "bg-[#3c6150] text-white border-[#3c6150] scale-[1.03] shadow-md"
+        : "bg-[#f7f1e3] text-[#4b3b2f] border-[#d9c7a3] hover:bg-[#f0e6cf] shadow"
+    }`}
+>
+  {d}
+</button>
+
             );
           })}
         </div>

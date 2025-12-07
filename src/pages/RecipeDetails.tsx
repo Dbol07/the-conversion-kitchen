@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import DecorativeFrame from "../components/DecorativeFrame";
 import FloralDivider from "../components/FloralDivider";
+import recipesBanner from "@/assets/banners/recipes-banner.png";
 
 const API_KEY = import.meta.env.VITE_SPOONACULAR_KEY as string;
 
@@ -100,40 +101,50 @@ export default function RecipeDetails() {
   /* Copy Ingredients */
   function copyIngredients() {
     const servings = recipe.servings ? `Ingredients (serves ${recipe.servings})\n\n` : "Ingredients\n\n";
-
-    const list =
-      recipe.extendedIngredients
-        ?.map((i) => `• ${i.original}`)
-        .join("\n") ?? "";
-
+    const list = recipe.extendedIngredients?.map(i => `• ${i.original}`).join("\n") ?? "";
     navigator.clipboard.writeText(servings + list);
     alert("Ingredients copied!");
   }
 
   return (
-    <div className="min-h-screen pb-24 bg-[#1b302c]/20 px-4 py-6">
-      <div className="max-w-3xl mx-auto">
-        
-        {/* BACK BUTTON */}
+    <div className="min-h-screen pb-24 bg-[#1b302c]/20">
+
+      {/* ⭐ PAGE BANNER */}
+      <div className="relative w-full max-w-4xl mx-auto mb-8 rounded-b-2xl overflow-hidden shadow-xl">
+        <img
+          src={recipesBanner}
+          alt="Recipe Banner"
+          className="w-full h-48 sm:h-56 md:h-64 object-cover"
+        />
+        <div className="absolute inset-0 bg-[#1b302c]/35" />
+
+        <h1 className="absolute inset-0 flex items-center justify-center text-center
+                       text-3xl sm:text-4xl font-bold text-white drop-shadow-xl px-4">
+          {recipe.title}
+        </h1>
+      </div>
+
+      {/* BACK BUTTON */}
+      <div className="max-w-3xl mx-auto px-4">
         <button
           onClick={() => navigate(-1)}
-          className="mb-4 px-4 py-2 bg-[#b8d3d5] text-[#1b302c] rounded-xl shadow hover:bg-[#a77a72] hover:text-white transition"
+          className="mb-4 px-4 py-2 bg-[#b8d3d5] text-[#1b302c] rounded-xl shadow 
+                     hover:bg-[#a77a72] hover:text-white transition"
         >
           ← Back
         </button>
+      </div>
 
+      <div className="max-w-3xl mx-auto px-4">
         <DecorativeFrame>
           <div className="parchment-card p-6">
-
-            {/* TITLE */}
-            <h1 className="text-3xl font-bold text-[#1b302c]">{recipe.title}</h1>
 
             {/* IMAGE */}
             {recipe.image && (
               <img
                 src={recipe.image}
                 alt={recipe.title}
-                className="rounded-xl shadow mt-4 mb-6"
+                className="rounded-xl shadow mb-6 w-full"
               />
             )}
 
@@ -145,13 +156,13 @@ export default function RecipeDetails() {
 
             <FloralDivider variant="mushroom" />
 
-            {/* INGREDIENTS SECTION */}
+            {/* INGREDIENTS */}
             <h2 className="text-xl font-bold text-[#1b302c] mt-6">Ingredients</h2>
 
             {recipe.extendedIngredients?.length ? (
               <>
                 <ul className="list-disc list-inside mt-2 mb-4 text-[#5f3c43]">
-                  {recipe.extendedIngredients.map((i) => (
+                  {recipe.extendedIngredients.map(i => (
                     <li key={i.id}>{i.original}</li>
                   ))}
                 </ul>
@@ -173,8 +184,8 @@ export default function RecipeDetails() {
             <h2 className="text-xl font-bold text-[#1b302c] mt-6">Instructions</h2>
 
             {recipe.analyzedInstructions?.length ? (
-              <ol className="list-decimal list-inside space-y-2 mt-2 text-[#5f3c43]">
-                {recipe.analyzedInstructions[0].steps.map((s) => (
+              <ol className="list-decimal list-inside space-y-2 mt-2 text-[#5f3c43] leading-relaxed">
+                {recipe.analyzedInstructions[0].steps.map(s => (
                   <li key={s.number}>{s.step}</li>
                 ))}
               </ol>
@@ -204,11 +215,10 @@ export default function RecipeDetails() {
                 </div>
               </>
             )}
+
           </div>
         </DecorativeFrame>
       </div>
     </div>
   );
 }
-
-/* STYLING for servings + related-chip */

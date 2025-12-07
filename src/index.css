@@ -1,113 +1,64 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Quicksand:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Global Variables */
 :root {
-  --sage: #b8d3d5;
-  --deep-green: #3c6150;
-  --rosewood: #5f3c43;
-  --warm-tan: #a77a72;
-  --forest: #1b302c;
-  --cream: #f5f1ed;
-  --parchment: #faf6f0;
+  --bg-primary: #f2ebd7;
+  --text-primary: #4b3b2f;
+  --accent-primary: #3c6150;
+  --accent-secondary: #b6916b;
 }
 
-@layer base {
-  * { @apply border-border; }
-
-  body {
-    @apply font-sans text-[#1b302c];
-    background-color: var(--cream);
-    font-family: 'Quicksand', sans-serif;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cormorant Garamond', serif;
-  }
-}
-
-@layer components {
-  .parchment-card {
-    @apply relative bg-[#faf6f0] rounded-2xl shadow-lg border-2 border-[#a77a72];
-  }
-.banner-text {
-  font-family: 'Cormorant Garamond', serif;
-  color: #4b3b2f;
-  font-size: 36px;
-  font-weight: 600;
-  text-shadow: 0 2px 3px rgba(255,255,255,0.8);
-}
-
-  .cottagecore-btn {
-    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95;
-  }
-
-  .page-bg {
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-  }
-
-  /* ⭐ QUICK TOOLS BUTTON */
-  .quicktool-btn {
-    @apply flex flex-col items-center p-3 rounded-xl 
-           bg-[#faf6f0] border border-[#e4d5b8] 
-           shadow-sm text-[#4b3b2f] font-semibold
-           transition-all duration-200;
-  }
-
-  .quicktool-btn:hover {
-    @apply bg-[#f2e8d8] -translate-y-1 shadow-md;
-  }
-
-  /* ⭐ TEMPLATE THUMBNAIL BORDER */
-  .template-card img {
-    @apply border border-[#e4d5b8];
-  }
-}
-
-@layer utilities {
-  .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-  .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
-  .animate-bounce-soft { animation: bounceSoft 2s ease-in-out infinite; }
-}
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-@keyframes slideUp { 
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes bounceSoft {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
+/* ------------------------------
+   GLOBAL PAGE TRANSITION WRAPPER
+   ------------------------------ */
 
 .page-transition {
-  animation: fadeIn 0.3s ease-out, slideUp 0.4s ease-out;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.5s ease-out;
 }
 
-html { scroll-behavior: smooth; }
-.card-hover {
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+.page-transition.page-in {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.card-hover:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+.page-transition.page-out {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
-.btn-soft {
-  transition: background 0.25s ease, transform 0.25s ease;
+/* ------------------------------
+   GLOBAL IMAGE FADE-IN 
+   ------------------------------ */
+
+img {
+  opacity: 0;
+  transition: opacity 0.6s ease-out;
+  will-change: opacity;
 }
 
-.btn-soft:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.05);
+img[src] {
+  opacity: 1;
 }
+
+/* ------------------------------
+   PARCMENT / CARD BASE STYLING
+   ------------------------------ */
+
+.parchment-card {
+  background: #fffaf4;
+  border: 1px solid #e4d5b8;
+  border-radius: 18px;
+  padding: 1.25rem;
+}
+
+/* ------------------------------
+   SERVING HIGHLIGHT (Recipe Details)
+   ------------------------------ */
+
 .serving-highlight {
   background: #fef3c7;
   padding: 2px 5px;
@@ -115,6 +66,10 @@ html { scroll-behavior: smooth; }
   font-weight: 600;
   color: #8b5e34;
 }
+
+/* ------------------------------
+   RELATED RECIPE CHIP (Recipe Details)
+   ------------------------------ */
 
 .related-chip {
   background: #f2ebd7;
@@ -125,6 +80,7 @@ html { scroll-behavior: smooth; }
   color: #3c6150;
   text-decoration: none;
   font-weight: 500;
+  display: inline-block;
 }
 
 .related-chip:hover {
@@ -132,3 +88,129 @@ html { scroll-behavior: smooth; }
   color: white;
 }
 
+/* ------------------------------
+   GLOBAL QUICK TOOL BUTTONS
+   ------------------------------ */
+
+.quicktool-item {
+  background: #fffaf4;
+  border: 1px solid #e4d5b8;
+  padding: 14px;
+  border-radius: 14px;
+  color: #4b3b2f;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.25s ease;
+}
+
+.quicktool-item:hover {
+  background: #f2ebd7;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+/* ------------------------------
+   SCROLL TO TOP BUTTON EFFECTS
+   ------------------------------ */
+
+.scroll-top {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.scroll-top:hover {
+  transform: translateY(-4px) scale(1.07);
+  opacity: 0.9;
+}
+
+/* ------------------------------
+   PAGE CARD HOVER (OPTIONAL)
+   ------------------------------ */
+
+.card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* ------------------------------
+   ACCORDION SECTIONS (FAQ)
+   ------------------------------ */
+
+details {
+  transition: background-color 0.25s ease;
+}
+
+details[open] {
+  background-color: #fff4e0;
+}
+
+/* ------------------------------
+   MOBILE RESPONSIVE TWEAKS
+   ------------------------------ */
+
+@media (max-width: 640px) {
+  .parchment-card {
+    padding: 1rem;
+  }
+
+  .quicktool-item {
+    padding: 12px;
+  }
+}
+/* FARMHOUSE DUST MOTE ANIMATION */
+@keyframes dustFloat {
+  0% { transform: translateY(0) translateX(0); opacity: 0.25; }
+  50% { transform: translateY(-20px) translateX(10px); opacity: 0.45; }
+  100% { transform: translateY(0) translateX(0); opacity: 0.25; }
+}
+
+.dust-layer {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.dust-mote {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 244, 214, 0.65); /* warm flour-like glow */
+  border-radius: 50%;
+  filter: blur(2px);
+  animation: dustFloat 6s ease-in-out infinite;
+}
+
+/* Random offsets so motes drift naturally */
+.d1 { top: 40%; left: 20%; animation-delay: 0s; }
+.d2 { top: 60%; left: 70%; animation-delay: 1s; }
+.d3 { top: 30%; left: 50%; animation-delay: 2s; }
+.d4 { top: 75%; left: 30%; animation-delay: 1.5s; }
+.d5 { top: 20%; left: 80%; animation-delay: .5s; }
+
+@keyframes pageSway {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(0.3deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.farm-breeze {
+  animation: pageSway 6s ease-in-out infinite;
+  transform-origin: center;
+}
+.page-transition {
+  opacity: 0;
+  transform: translateY(12px) scale(0.99);
+  transition: opacity .6s ease, transform .6s ease;
+}
+
+.page-transition.page-in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}

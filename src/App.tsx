@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 
 import AppLayout from "./components/AppLayout";
-import PageWrapper from "@/components/PageWrapper";
+import PageTransition from "@/components/PageTransition";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -38,9 +38,9 @@ const App = () => (
               <Route
                 path="/"
                 element={
-                  <PageWrapper>
+                  <PageTransition>
                     <Dashboard />
-                  </PageWrapper>
+                  </PageTransition>
                 }
               />
 
@@ -48,37 +48,39 @@ const App = () => (
               <Route
                 path="/guide"
                 element={
-                  <PageWrapper>
+                  <PageTransition>
                     <ConversionsGuide />
-                  </PageWrapper>
+                  </PageTransition>
                 }
               />
 
-              {/* RECIPES */}
+              {/* RECIPES LIST */}
               <Route
                 path="/recipes"
                 element={
-                  <PageWrapper>
+                  <PageTransition>
                     <Recipes />
-                  </PageWrapper>
+                  </PageTransition>
                 }
               />
 
+              {/* RECIPE DETAILS */}
               <Route
                 path="/recipes/:id"
                 element={
-                  <PageWrapper>
+                  <PageTransition>
                     <RecipeDetails />
-                  </PageWrapper>
+                  </PageTransition>
                 }
               />
 
+              {/* RECIPE → CONVERTER PREVIEW (if used later) */}
               <Route
                 path="/recipes/:id/convert"
                 element={
-                  <PageWrapper>
+                  <PageTransition>
                     <RecipeConvertPreview />
-                  </PageWrapper>
+                  </PageTransition>
                 }
               />
 
@@ -86,9 +88,9 @@ const App = () => (
               <Route
                 path="/calculator"
                 element={
-                  <PageWrapper>
+                  <PageTransition>
                     <Calculator />
-                  </PageWrapper>
+                  </PageTransition>
                 }
               />
 
@@ -96,38 +98,39 @@ const App = () => (
               <Route
                 path="/printables"
                 element={
-                  <PageWrapper>
+                  <PageTransition>
                     <Printables />
-                  </PageWrapper>
+                  </PageTransition>
                 }
               />
 
-              {/* INFO */}
+              {/* FAQ */}
               <Route
                 path="/faq"
                 element={
-                  <PageWrapper>
+                  <PageTransition>
                     <FAQ />
-                  </PageWrapper>
+                  </PageTransition>
                 }
               />
 
+              {/* ABOUT */}
               <Route
                 path="/about"
                 element={
-                  <PageWrapper>
+                  <PageTransition>
                     <About />
-                  </PageWrapper>
+                  </PageTransition>
                 }
               />
 
-              {/* TEMPLATE PREVIEW (Cookie, Cake, Bread) */}
+              {/* TEMPLATE PREVIEWS */}
               <Route
                 path="/template/:name"
                 element={
-                  <PageWrapper>
+                  <PageTransition>
                     <TemplatePreview />
-                  </PageWrapper>
+                  </PageTransition>
                 }
               />
             </Route>
@@ -136,9 +139,9 @@ const App = () => (
             <Route
               path="*"
               element={
-                <PageWrapper>
+                <PageTransition>
                   <NotFound />
-                </PageWrapper>
+                </PageTransition>
               }
             />
           </Routes>

@@ -1,105 +1,85 @@
-import React from "react";
-import Accordion from "@/components/Accordion";
 import FloralDivider from "@/components/FloralDivider";
-import bgGuide from "@/assets/backgrounds/bg-guide.jpg";
+import guideBanner from "@/assets/banners/guide-banner.png";
 
 export default function ConversionsGuide() {
   return (
-    <div
-      className="min-h-screen pb-28 page-transition page-bg"
-      style={{
-        backgroundImage: `url(${bgGuide})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      {/* soft overlay */}
-      <div className="bg-[#1b302c]/30 min-h-screen px-4 py-8">
-        <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto p-0 pb-24">
 
-          {/* Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-4xl font-bold text-white drop-shadow-lg">
-              Kitchen Conversions Guide
-            </h1>
-            <p className="text-white/90 mt-2">
-              Quick reference for all your cozy cooking & baking needs
-            </p>
-          </div>
+      {/* ⭐ PAGE BANNER */}
+      <div
+        className="w-full h-40 sm:h-48 md:h-56 relative flex items-center justify-center mb-6 rounded-b-2xl overflow-hidden shadow"
+      >
+        <img
+          src={guideBanner}
+          alt="Guide Banner"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-[#1b302c]/35" />
 
-          <FloralDivider variant="vine" size="sm" />
+        <h1 className="relative z-10 text-3xl sm:text-4xl font-bold text-white drop-shadow-lg text-center">
+          Kitchen Conversions Guide
+        </h1>
+      </div>
 
-          {/* MAIN GUIDE ACCORDIONS */}
-          <div className="mt-8 space-y-4">
+      <FloralDivider variant="vine" size="md" />
 
-            <Accordion title="Volume Conversions" icon="teacup" defaultOpen>
-              <div className="space-y-2 text-[#1b302c]">
-                <p><strong className="text-[#3c6150]">1 tablespoon</strong> = 3 teaspoons</p>
-                <p><strong className="text-[#3c6150]">1 fluid ounce</strong> = 2 tablespoons</p>
-                <p><strong className="text-[#3c6150]">1 cup</strong> = 16 tablespoons = 8 fl oz</p>
-                <p><strong className="text-[#3c6150]">1 pint</strong> = 2 cups</p>
-                <p><strong className="text-[#3c6150]">1 quart</strong> = 2 pints = 4 cups</p>
-                <p><strong className="text-[#3c6150]">1 gallon</strong> = 4 quarts = 16 cups</p>
-              </div>
-            </Accordion>
+      {/* ⭐ PAGE CONTENT */}
+      <div className="mt-6 bg-white/90 border border-[#e4d5b8] rounded-xl p-6 shadow leading-relaxed text-[#4b3b2f]">
 
-            <Accordion title="Weight Conversions" icon="leaf">
-              <div className="space-y-2 text-[#1b302c]">
-                <p><strong className="text-[#3c6150]">1 pound</strong> = 16 ounces</p>
-                <p><strong className="text-[#3c6150]">1 ounce</strong> = 28.35 grams</p>
-                <p><strong className="text-[#3c6150]">1 pound</strong> = 453.6 grams</p>
-                <p><strong className="text-[#3c6150]">1 kilogram</strong> = 2.2 pounds</p>
-              </div>
-            </Accordion>
+        <h2 className="text-2xl font-semibold mb-4">Common Measurement Conversions</h2>
+        <p className="mb-3">
+          Use this guide to convert between cups, tablespoons, teaspoons, fluid ounces, grams,
+          and milliliters. These values are approximate but work well for everyday baking and cooking.
+        </p>
 
-            <Accordion title="Temperature" icon="mushroom">
-              <div className="space-y-2 text-[#1b302c]">
-                <p><strong className="text-[#3c6150]">250°F</strong> = 120°C (Low)</p>
-                <p><strong className="text-[#3c6150]">350°F</strong> = 175°C (Moderate)</p>
-                <p><strong className="text-[#3c6150]">400°F</strong> = 200°C (Hot)</p>
-                <p><strong className="text-[#3c6150]">450°F</strong> = 230°C (Very Hot)</p>
-              </div>
-            </Accordion>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>1 tablespoon = 3 teaspoons</li>
+          <li>1 cup = 16 tablespoons</li>
+          <li>1 cup = 8 fluid ounces</li>
+          <li>1 cup = 240 ml (approx.)</li>
+          <li>1 tablespoon = 15 ml</li>
+          <li>1 teaspoon = 5 ml</li>
+        </ul>
 
-            <Accordion title="Baking Measurements" icon="teacup">
-              <div className="space-y-2 text-[#1b302c]">
-                <p><strong className="text-[#3c6150]">1 cup flour</strong> = 120–125g</p>
-                <p><strong className="text-[#3c6150]">1 cup sugar</strong> = 200g</p>
-                <p><strong className="text-[#3c6150]">1 cup butter</strong> = 227g (2 sticks)</p>
-                <p><strong className="text-[#3c6150]">1 cup milk</strong> = 240ml</p>
-              </div>
-            </Accordion>
+        <FloralDivider variant="vine" size="sm" className="my-6" />
 
-            <Accordion title="Common Substitutions" icon="leaf">
-              <div className="space-y-2 text-[#1b302c]">
-                <p><strong className="text-[#3c6150]">1 cup buttermilk</strong> = 1 cup milk + 1 tbsp lemon juice</p>
-                <p><strong className="text-[#3c6150]">1 cup cake flour</strong> = 1 cup AP flour - 2 tbsp + 2 tbsp cornstarch</p>
-              </div>
-            </Accordion>
+        <h2 className="text-2xl font-semibold mb-4">Ingredient Density Notes</h2>
+        <p className="mb-3">
+          Some ingredients weigh more than others, so converting from cups to grams varies.
+          Here are common approximations used in most kitchens:
+        </p>
 
-            <Accordion title="Metric Quick Reference" icon="mushroom">
-              <div className="space-y-2 text-[#1b302c]">
-                <p><strong className="text-[#3c6150]">30ml</strong> = 1 fl oz = 2 tbsp</p>
-                <p><strong className="text-[#3c6150]">240ml</strong> = 8 fl oz = 1 cup</p>
-                <p><strong className="text-[#3c6150]">1 liter</strong> = 4 cups = 1 quart</p>
-              </div>
-            </Accordion>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>1 cup all-purpose flour ≈ 120g</li>
+          <li>1 cup granulated sugar ≈ 200g</li>
+          <li>1 cup brown sugar ≈ 180g (packed)</li>
+          <li>1 cup butter ≈ 227g (2 sticks)</li>
+          <li>1 cup honey ≈ 340g</li>
+          <li>1 cup oats ≈ 90g</li>
+        </ul>
 
-          </div>
+        <FloralDivider variant="vine" size="sm" className="my-6" />
 
-          <FloralDivider variant="vine" size="sm" />
+        <h2 className="text-2xl font-semibold mb-4">Quick Oven Temperature Guide</h2>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>300°F = 150°C</li>
+          <li>325°F = 165°C</li>
+          <li>350°F = 180°C</li>
+          <li>375°F = 190°C</li>
+          <li>400°F = 200°C</li>
+        </ul>
 
-          {/* BOTTOM CARD */}
-          <div className="parchment-card p-6 text-center mt-8 rounded-2xl shadow-md bg-[#fffaf4]/95 border border-[#e4d5b8]">
-            <h2 className="text-xl font-bold text-[#1b302c] mb-3">
-              Want more help?
-            </h2>
-            <p className="text-[#5f3c43]">
-              Visit the Calculator for instant conversions, or explore our printable charts for easy kitchen reference.
-            </p>
-          </div>
+        <FloralDivider variant="vine" size="sm" className="my-6" />
 
-        </div>
+        <h2 className="text-2xl font-semibold mb-4">Common Substitutions</h2>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>1 egg = ¼ cup applesauce or ½ mashed banana</li>
+          <li>1 cup buttermilk = 1 tbsp vinegar + milk to make 1 cup</li>
+          <li>1 tbsp cornstarch = 2 tbsp flour (thickening)</li>
+          <li>1 cup sour cream = 1 cup Greek yogurt</li>
+          <li>1 cup heavy cream = ¾ cup milk + ⅓ cup butter</li>
+        </ul>
+
       </div>
     </div>
   );
