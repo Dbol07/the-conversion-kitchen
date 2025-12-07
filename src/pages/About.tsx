@@ -4,11 +4,13 @@ import DecorativeFrame from "../components/DecorativeFrame";
 
 import BgAbout from "../assets/backgrounds/bg-about.png";
 // import linenTexture from "../assets/textures/linen-texture.png";
-import woodDivider from "../assets/textures/wood-strip.png";
-import wheatIcon from "../assets/icons/farm/wheat.png";
-import rollingPin from "../assets/icons/farm/rolling-pin.png";
-import barnIcon from "../assets/icons/farm/barn.png";
-import spoonIcon from "../assets/icons/farm/wooden-spoon.png";
+import { getIcon } from "@/lib/getIcon";
+
+const woodDivider = getIcon("../assets/textures/wood-strip.png");
+const wheatIcon = getIcon("../assets/icons/farm/wheat.png");
+const rollingPin = getIcon("../assets/icons/farm/rolling-pin.png");
+const barnIcon = getIcon("../assets/icons/farm/barn.png");
+const spoonIcon = getIcon("../assets/icons/farm/wooden-spoon.png");
 
 export default function About() {
   return (
