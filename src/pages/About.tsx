@@ -6,11 +6,12 @@ import BgAbout from "../assets/backgrounds/bg-about.png";
 // import linenTexture from "../assets/textures/linen-texture.png";
 import { getIcon } from "@/lib/getIcon";
 
-const woodDivider = getIcon("../assets/textures/wood-strip.png");
-const wheatIcon = getIcon("../assets/icons/farm/wheat.png");
-const rollingPin = getIcon("../assets/icons/farm/rolling-pin.png");
-const barnIcon = getIcon("../assets/icons/farm/barn.png");
-const spoonIcon = getIcon("../assets/icons/farm/wooden-spoon.png");
+const woodDivider = getIcon("textures/wood-strip.png");
+const wheatIcon = getIcon("icons/farm/wheat.png");
+
+const rollingPin = getIcon("icons/farm/rolling-pin.png");
+const barnIcon = getIcon("icons/farm/barn.png");
+const spoonIcon = getIcon("icons/farm/wooden-spoon.png");
 
 export default function About() {
   return (

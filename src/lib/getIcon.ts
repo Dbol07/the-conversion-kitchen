@@ -1,16 +1,35 @@
 import fallbackIcon from "@/assets/fallback/farm-fallback.png";
 
 /**
- * Attempts to resolve a file path.
- * If the file does not exist, returns the fallback icon instead.
- * 
- * This prevents Vercel build failures and missing-image crashes.
+ * Build a map of all real assets inside src/assets
+ * using Vite's import.meta.glob (safe for build & runtime).
  */
-export function getIcon(path: string): string {
-  try {
-    return new URL(path, import.meta.url).href;
-  } catch (err) {
-    console.warn("[getIcon] Missing asset:", path, "→ using fallback icon.");
-    return fallbackIcon;
-  }
+const assetMap: Record<string, string> = {};
+
+const modules = import.meta.glob("/src/assets/**/*", {
+  eager: true,
+});
+
+// Example key transformation:
+// "/src/assets/icons/farm/wheat.png" → "icons/farm/wheat.png"
+for (const path in modules) {
+  const mod = modules[path] as any;
+  const cleaned = path.replace("/src/assets/", "");
+  assetMap[cleaned] = mod.default;
+}
+
+/**
+ * Retrieves an asset by relative path inside src/assets/.
+ * 
+ * Example:
+ *   getIcon("icons/farm/wheat.png")
+ */
+export function getIcon(relativePath: string): string {
+  // Remove any leading "./" or "/" or "../"
+  const cleaned = relativePath
+    .replace(/^\.?\//, "")    // remove leading "./" or "/"
+    .replace(/^assets\//, "") // allow passing "assets/icons/..."
+    .replace(/^src\//, "");   // allow passing "src/assets/icons/..."
+
+  return assetMap[cleaned] ?? fallbackIcon;
 }
