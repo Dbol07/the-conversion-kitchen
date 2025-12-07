@@ -3,7 +3,7 @@ import FloralDivider from "../components/FloralDivider";
 import DecorativeFrame from "../components/DecorativeFrame";
 
 import BgAbout from "../assets/backgrounds/bg-about.png";
-import linenTexture from "../assets/textures/linen-texture.png";
+// import linenTexture from "../assets/textures/linen-texture.png";
 import woodDivider from "../assets/textures/wood-strip.png";
 import wheatIcon from "../assets/icons/farm/wheat.png";
 import rollingPin from "../assets/icons/farm/rolling-pin.png";
@@ -48,10 +48,9 @@ export default function About() {
     className="parchment-card p-8 relative"
 
               style={{
-                backgroundImage: `url(${linenTexture})`,
-                backgroundSize: "cover",
-                backgroundBlendMode: "soft-light",
-              }}
+  backgroundColor: "#fffaf4"
+}}
+
             >
               {/* Little wheat corner embellishment */}
               <img
