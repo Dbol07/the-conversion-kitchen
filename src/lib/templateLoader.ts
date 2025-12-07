@@ -1,11 +1,14 @@
-import cookieThumb from "@/assets/templates/cookie-thumb.jpg";
-import cookieFull from "@/assets/templates/cookie.jpg";
+// COOKIE
+import cookieThumb from "@/assets/templates/cookie-template-thumb.png";
+import cookieFull from "@/assets/templates/cookie-template-full.png";
 
-import cakeThumb from "@/assets/templates/cake-thumb.jpg";
-import cakeFull from "@/assets/templates/cake.jpg";
+// CAKE
+import cakeThumb from "@/assets/templates/cake-template-thumb.png";
+import cakeFull from "@/assets/templates/cake-template-full.png";
 
-import breadThumb from "@/assets/templates/bread-thumb.jpg";
-import breadFull from "@/assets/templates/bread.jpg";
+// BREAD
+import breadThumb from "@/assets/templates/bread-template-thumb.png";
+import breadFull from "@/assets/templates/bread-template-full.png";
 
 /**
  * Template definitions — clean, explicit, import-safe.
