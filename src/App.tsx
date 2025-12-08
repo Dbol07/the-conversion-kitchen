@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 
-import AppLayout from "./components/AppLayout";
+import AppLayout from "./layouts/AppLayout";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
