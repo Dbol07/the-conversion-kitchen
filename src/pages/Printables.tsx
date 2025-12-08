@@ -1,6 +1,9 @@
 import { useState } from "react";
 import FloralDivider from "@/components/FloralDivider";
 import printablesBanner from "@/assets/banners/printables-banner.png";
+import { loadPrintables } from "@/utils/loadPrintables";
+
+const printables = loadPrintables();
 
 interface Printable {
   id: string;

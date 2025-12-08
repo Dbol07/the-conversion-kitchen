@@ -1,0 +1,20 @@
+{
+  "name": "Homemade White Bread",
+  "ingredients": [
+    "3 cups all-purpose flour",
+    "1 tbsp sugar",
+    "1 cup warm water",
+    "2 tbsp butter, melted",
+    "1 packet active dry yeast",
+    "1 tsp salt"
+  ],
+  "instructions": [
+    "Combine warm water, sugar, and yeast. Let sit 5 minutes.",
+    "Mix in melted butter, salt, and flour.",
+    "Knead dough 6–8 minutes.",
+    "Let rise 1 hour, then shape loaf.",
+    "Bake 25–30 minutes at 375°F (190°C)."
+  ],
+  "image": "/src/assets/templates/bread-template-full.png",
+  "thumb": "/src/assets/templates/bread-template-thumb.png"
+}

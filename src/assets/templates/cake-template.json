@@ -1,0 +1,22 @@
+{
+  "name": "Classic Vanilla Cake",
+  "ingredients": [
+    "2 1/2 cups all-purpose flour",
+    "1 1/4 cups sugar",
+    "1/2 cup butter, softened",
+    "2 eggs",
+    "1 cup milk",
+    "1 tbsp vanilla extract",
+    "2 tsp baking powder"
+  ],
+  "instructions": [
+    "Preheat oven to 350°F (175°C).",
+    "Cream butter and sugar together.",
+    "Add eggs and vanilla.",
+    "Mix dry ingredients separately.",
+    "Combine wet and dry mixtures.",
+    "Bake 25–30 minutes."
+  ],
+  "image": "/src/assets/templates/cake-template-full.png",
+  "thumb": "/src/assets/templates/cake-template-thumb.png"
+}

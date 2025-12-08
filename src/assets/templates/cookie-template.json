@@ -1,0 +1,20 @@
+{
+  "name": "Soft Chocolate Chip Cookies",
+  "ingredients": [
+    "2 1/4 cups all-purpose flour",
+    "1 cup butter, softened",
+    "1 cup brown sugar",
+    "1 cup granulated sugar",
+    "2 eggs",
+    "2 cups chocolate chips"
+  ],
+  "instructions": [
+    "Preheat oven to 350°F (175°C).",
+    "Cream butter and sugars until fluffy.",
+    "Add eggs and mix well.",
+    "Add dry ingredients and fold in chocolate chips.",
+    "Bake 10–12 minutes."
+  ],
+  "image": "/src/assets/templates/cookie-template-full.png",
+  "thumb": "/src/assets/templates/cookie-template-thumb.png"
+}

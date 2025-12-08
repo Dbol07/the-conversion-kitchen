@@ -1,46 +1,84 @@
+// -----------------------------
+// Template Types
+// -----------------------------
 export interface RecipeTemplate {
-  name: string;
-  servings: number;
-  ingredients: {
-    item: string;
-    us: string;
-    metric: string;
-  }[];
-  instructions?: string[];
-  thumb: string;
-  full: string;
+  id: string;               // "cookie", "bread", etc.
+  name: string;             // Recipe title
+  ingredients: string[];    // Ingredients list
+  instructions?: string[];  // Optional instructions
+  image: string;            // Full image file
+  thumb: string;            // Thumbnail image file
 }
 
-export async function loadTemplates() {
-  // Auto-import all JSON recipe files
-  const jsonFiles = import.meta.glob("/src/assets/templates/*-template.json");
-  const imageFiles = import.meta.glob("/src/assets/templates/*.{png,jpg,jpeg,webp}");
+// -----------------------------
+// Internal Cache
+// -----------------------------
+let cachedTemplates: RecipeTemplate[] | null = null;
+
+// -----------------------------
+// Load ALL Templates (JSON + Images)
+// -----------------------------
+export async function loadTemplates(): Promise<RecipeTemplate[]> {
+  if (cachedTemplates) return cachedTemplates;
+
+  // Load all recipe JSON files (eager = synchronous-like behavior)
+  const jsonFiles = import.meta.glob("/src/assets/templates/*-template.json", { eager: true }) as Record<
+    string,
+    { default: any }
+  >;
+
+  // Load all template images
+  const imageFiles = import.meta.glob("/src/assets/templates/*.{png,jpg,jpeg,webp}", {
+    eager: true,
+  }) as Record<string, { default: string }>;
 
   const templates: RecipeTemplate[] = [];
 
+  // Process JSON files
   for (const path in jsonFiles) {
-    const jsonModule = await jsonFiles[path]() as any;
-    const data = jsonModule.default;
+    const data = jsonFiles[path].default;
 
-    const base = path
-      .split("/")
-      .pop()!
-      .replace("-template.json", "");
+    // Extract base filename, e.g. "cookie" from "cookie-template.json"
+    const base = path.split("/").pop()!.replace("-template.json", "");
 
-    const thumbPath = Object.keys(imageFiles).find((f) =>
+    // Find images matching base name
+    const thumb = Object.keys(imageFiles).find((f) =>
       f.includes(`${base}-template-thumb`)
     );
-
-    const fullPath = Object.keys(imageFiles).find((f) =>
+    const full = Object.keys(imageFiles).find((f) =>
       f.includes(`${base}-template-full`)
     );
 
     templates.push({
-      ...data,
-      thumb: thumbPath ? thumbPath.replace("/src", "") : "",
-      full: fullPath ? fullPath.replace("/src", "") : ""
+      id: base,
+      name: data.name,
+      ingredients: data.ingredients,
+      instructions: data.instructions || [],
+      image: full ? imageFiles[full].default : "",
+      thumb: thumb ? imageFiles[thumb].default : "",
     });
   }
 
+  cachedTemplates = templates;
   return templates;
+}
+
+// -----------------------------
+// Get ALL Templates (Sync-friendly)
+// -----------------------------
+export function getAllTemplates(): RecipeTemplate[] {
+  // Because we used eager imports above, this is safe
+  if (!cachedTemplates) {
+    // Fire loader without awaiting, because eager imports resolve instantly
+    loadTemplates();
+  }
+  return cachedTemplates || [];
+}
+
+// -----------------------------
+// Get Template by ID (name in URL)
+// -----------------------------
+export function getTemplateById(id: string): RecipeTemplate | undefined {
+  const all = getAllTemplates();
+  return all.find((t) => t.id.toLowerCase() === id.toLowerCase());
 }

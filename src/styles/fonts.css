@@ -1,0 +1,9 @@
+@font-face {
+  font-family: "Cinzel Decorative";
+  src: url("../assets/fonts/CinzelDecorative.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Cormorant";
+  src: url("../assets/fonts/Cormorant.ttf") format("truetype");
+}

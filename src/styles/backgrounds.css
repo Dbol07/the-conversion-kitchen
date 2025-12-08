@@ -1,0 +1,35 @@
+.bg-main {
+  background-image: url("../assets/backgrounds/bg-main.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-about {
+  background-image: url("../assets/backgrounds/bg-about.png");
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-guide {
+  background-image: url("../assets/backgrounds/bg-guide.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-calculator {
+  background-image: url("../assets/backgrounds/bg-calculator.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-printables {
+  background-image: url("../assets/backgrounds/bg-printables.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-faq {
+  background-image: url("../assets/backgrounds/bg-faq.jpg");
+  background-size: cover;
+  background-position: center;
+}
