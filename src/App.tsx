@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 
 import AppLayout from "./components/AppLayout";
-import PageTransition from "@/components/PageTransition";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -35,115 +34,45 @@ const App = () => (
             <Route element={<AppLayout />}>
 
               {/* HOME */}
-              <Route
-                path="/"
-                element={
-                  <PageTransition>
-                    <Dashboard />
-                  </PageTransition>
-                }
-              />
+              <Route path="/" element={<Dashboard />} />
 
               {/* GUIDE */}
-              <Route
-                path="/guide"
-                element={
-                  <PageTransition>
-                    <ConversionsGuide />
-                  </PageTransition>
-                }
-              />
+              <Route path="/guide" element={<ConversionsGuide />} />
 
               {/* RECIPES LIST */}
-              <Route
-                path="/recipes"
-                element={
-                  <PageTransition>
-                    <Recipes />
-                  </PageTransition>
-                }
-              />
+              <Route path="/recipes" element={<Recipes />} />
 
               {/* RECIPE DETAILS */}
-              <Route
-                path="/recipes/:id"
-                element={
-                  <PageTransition>
-                    <RecipeDetails />
-                  </PageTransition>
-                }
-              />
+              <Route path="/recipes/:id" element={<RecipeDetails />} />
 
-              {/* RECIPE → CONVERTER PREVIEW (if used later) */}
+              {/* RECIPE → CONVERTER PREVIEW */}
               <Route
                 path="/recipes/:id/convert"
-                element={
-                  <PageTransition>
-                    <RecipeConvertPreview />
-                  </PageTransition>
-                }
+                element={<RecipeConvertPreview />}
               />
 
               {/* CALCULATOR */}
-              <Route
-                path="/calculator"
-                element={
-                  <PageTransition>
-                    <Calculator />
-                  </PageTransition>
-                }
-              />
+              <Route path="/calculator" element={<Calculator />} />
 
               {/* PRINTABLES */}
-              <Route
-                path="/printables"
-                element={
-                  <PageTransition>
-                    <Printables />
-                  </PageTransition>
-                }
-              />
+              <Route path="/printables" element={<Printables />} />
 
               {/* FAQ */}
-              <Route
-                path="/faq"
-                element={
-                  <PageTransition>
-                    <FAQ />
-                  </PageTransition>
-                }
-              />
+              <Route path="/faq" element={<FAQ />} />
 
               {/* ABOUT */}
-              <Route
-                path="/about"
-                element={
-                  <PageTransition>
-                    <About />
-                  </PageTransition>
-                }
-              />
+              <Route path="/about" element={<About />} />
 
-              {/* TEMPLATE PREVIEWS */}
+              {/* TEMPLATE PREVIEW */}
               <Route
                 path="/template/:name"
-                element={
-                  <PageTransition>
-                    <TemplatePreview />
-                  </PageTransition>
-                }
+                element={<TemplatePreview />}
               />
+
             </Route>
 
-            {/* 404 */}
-            <Route
-              path="*"
-              element={
-                <PageTransition>
-                  <NotFound />
-                </PageTransition>
-              }
-            />
+            {/* NOT FOUND */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
 
