@@ -1,7 +1,7 @@
 import FloralDivider from "@/components/FloralDivider";
 import guideBanner from "@/assets/banners/guide-banner.png";
 
-// Background BELOW the banner
+// Background BELOW the first divider
 import bgGuide from "@/assets/backgrounds/bg-guide.jpg";
 
 // Section-specific icons
@@ -14,7 +14,7 @@ export default function ConversionsGuide() {
   return (
     <div className="pb-24">
 
-      {/* ⭐ PAGE BANNER */}
+      {/* ⭐ PAGE BANNER (no background behind it) */}
       <div className="w-full h-40 sm:h-48 md:h-56 relative flex items-center justify-center mb-0 rounded-b-2xl overflow-hidden shadow">
         <img
           src={guideBanner}
@@ -27,19 +27,20 @@ export default function ConversionsGuide() {
         </h1>
       </div>
 
-      {/* ⭐ BACKGROUND STARTS BELOW BANNER */}
+      {/* ⭐ DIVIDER ABOVE BACKGROUND */}
+      <FloralDivider variant="vine" size="md" className="mt-4" />
+
+      {/* ⭐ BACKGROUND STARTS *AFTER* DIVIDER */}
       <div
-        className="pt-8"
+        className="pt-8 pb-24"
         style={{
           backgroundImage: `url(${bgGuide})`,
           backgroundSize: "cover",
           backgroundPosition: "center top",
         }}
       >
-        <FloralDivider variant="vine" size="md" />
-
-        {/* ⭐ PAGE CONTENT */}
-        <div className="mt-6 bg-white/90 border border-[#e4d5b8] rounded-xl p-6 shadow leading-relaxed text-[#4b3b2f]">
+        {/* ⭐ MAIN CONTENT CARD */}
+        <div className="mt-6 bg-white/90 border border-[#e4d5b8] rounded-xl p-6 shadow leading-relaxed text-[#4b3b2f] mx-auto max-w-4xl">
 
           {/* ⭐ SECTION 1 */}
           <div className="flex items-center gap-3 bg-[#fff0e6]/70 border border-[#e4d5b8] px-4 py-2 rounded-xl mb-4 mt-2 shadow-sm">
