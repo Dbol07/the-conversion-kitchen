@@ -1,10 +1,14 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Accordion from "@/components/Accordion";
 import FloralDivider from "@/components/FloralDivider";
 import faqBanner from "@/assets/banners/faq-banner.png";
 
 export default function FAQ() {
   /* ---------------------- Categorized FAQs ---------------------- */
+
+  const accordionStyle =
+    "bg-gradient-to-r from-[#f7e6c4] via-[#f5d6b1] to-[#f2c9a0] border border-[#e4d5b8]";
 
   const calculatorFAQs = [
     {
@@ -120,7 +124,7 @@ export default function FAQ() {
               key={idx}
               title={faq.title}
               icon={faq.icon}
-              defaultOpen={false}
+              className={accordionStyle}
             >
               <p className="leading-relaxed">{faq.content}</p>
             </Accordion>
@@ -138,7 +142,12 @@ export default function FAQ() {
 
         <div className="space-y-4">
           {measurementFAQs.map((faq, idx) => (
-            <Accordion key={idx} title={faq.title} icon={faq.icon}>
+            <Accordion
+              key={idx}
+              title={faq.title}
+              icon={faq.icon}
+              className={accordionStyle}
+            >
               <p className="leading-relaxed">{faq.content}</p>
             </Accordion>
           ))}
@@ -155,7 +164,12 @@ export default function FAQ() {
 
         <div className="space-y-4">
           {appUseFAQs.map((faq, idx) => (
-            <Accordion key={idx} title={faq.title} icon={faq.icon}>
+            <Accordion
+              key={idx}
+              title={faq.title}
+              icon={faq.icon}
+              className={accordionStyle}
+            >
               <p className="leading-relaxed">{faq.content}</p>
             </Accordion>
           ))}
@@ -172,20 +186,33 @@ export default function FAQ() {
 
         <div className="space-y-4">
           {futureFAQs.map((faq, idx) => (
-            <Accordion key={idx} title={faq.title} icon={faq.icon}>
+            <Accordion
+              key={idx}
+              title={faq.title}
+              icon={faq.icon}
+              className={accordionStyle}
+            >
               <p className="leading-relaxed">{faq.content}</p>
             </Accordion>
           ))}
         </div>
       </section>
 
-      {/* ---------------------- BOTTOM CARD ---------------------- */}
+      {/* ---------------------- BOTTOM CARD WITH LINKS ---------------------- */}
       <div className="parchment-card p-6 text-center mt-12 rounded-2xl shadow-md bg-[#fffaf4]/95 border border-[#e4d5b8]">
         <h2 className="text-xl font-bold text-[#1b302c] mb-3">
           Still have questions?
         </h2>
         <p className="text-[#5f3c43]">
-          Explore the Kitchen Conversions Guide for more details, or open the Calculator for instant help.
+          Explore the{" "}
+          <Link to="/guide" className="font-semibold underline text-emerald-700 hover:text-emerald-900">
+            Kitchen Conversions Guide
+          </Link>{" "}
+          for more details, or open the{" "}
+          <Link to="/calculator" className="font-semibold underline text-emerald-700 hover:text-emerald-900">
+            Calculator
+          </Link>{" "}
+          for instant help.
         </p>
       </div>
     </div>
