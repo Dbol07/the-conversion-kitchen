@@ -20,10 +20,7 @@ export default function About() {
       className="min-h-screen pb-28 page-transition page-bg"
       style={{ backgroundImage: `url(${BgAbout})` }}
     >
- {/* DEBUG TEST */}
-      <div style={{ background: "red", padding: "40px" }}>
-        <h1 style={{ fontSize: "2rem", color: "white" }}>TEST ABOUT PAGE</h1>
-      </div>
+ 
       {/* TRANSLUCENT OVERLAY FOR READABILITY */}
       <div className="bg-[#1b302c]/20 min-h-screen px-4 py-10">
         <div className="max-w-3xl mx-auto relative">
