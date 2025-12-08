@@ -1,21 +1,29 @@
 import FloralDivider from "@/components/FloralDivider";
 import guideBanner from "@/assets/banners/guide-banner.png";
+import bgGuide from "@/assets/backgrounds/bg-guide.jpg";
+
+// Decorative header icons (swap to whichever style you prefer)
+import iconMushroom from "@/assets/icons/sections/sec-kitchen.png"; 
+import iconVine from "@/assets/dividers/divider-vine-light.png";
 
 export default function ConversionsGuide() {
   return (
-    <div className="max-w-4xl mx-auto p-0 pb-24">
-
+    <div
+      className="min-h-screen pb-24"
+      style={{
+        backgroundImage: `url(${bgGuide})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       {/* ⭐ PAGE BANNER */}
-      <div
-        className="w-full h-40 sm:h-48 md:h-56 relative flex items-center justify-center mb-6 rounded-b-2xl overflow-hidden shadow"
-      >
+      <div className="w-full h-40 sm:h-48 md:h-56 relative flex items-center justify-center mb-6 rounded-b-2xl overflow-hidden shadow">
         <img
           src={guideBanner}
           alt="Guide Banner"
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-[#1b302c]/35" />
-
         <h1 className="relative z-10 text-3xl sm:text-4xl font-bold text-white drop-shadow-lg text-center">
           Kitchen Conversions Guide
         </h1>
@@ -26,7 +34,14 @@ export default function ConversionsGuide() {
       {/* ⭐ PAGE CONTENT */}
       <div className="mt-6 bg-white/90 border border-[#e4d5b8] rounded-xl p-6 shadow leading-relaxed text-[#4b3b2f]">
 
-        <h2 className="text-2xl font-semibold mb-4">Common Measurement Conversions</h2>
+        {/* ⭐ HEADER 1 */}
+        <div className="flex items-center gap-2 mb-4 mt-2">
+          <img src={iconMushroom} className="w-7 h-7 opacity-90" />
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-wide">
+            Common Measurement Conversions
+          </h2>
+        </div>
+
         <p className="mb-3">
           Use this guide to convert between cups, tablespoons, teaspoons, fluid ounces, grams,
           and milliliters. These values are approximate but work well for everyday baking and cooking.
@@ -43,7 +58,14 @@ export default function ConversionsGuide() {
 
         <FloralDivider variant="vine" size="sm" className="my-6" />
 
-        <h2 className="text-2xl font-semibold mb-4">Ingredient Density Notes</h2>
+        {/* ⭐ HEADER 2 */}
+        <div className="flex items-center gap-2 mb-4 mt-2">
+          <img src={iconMushroom} className="w-7 h-7 opacity-90" />
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-wide">
+            Ingredient Density Notes
+          </h2>
+        </div>
+
         <p className="mb-3">
           Some ingredients weigh more than others, so converting from cups to grams varies.
           Here are common approximations used in most kitchens:
@@ -60,7 +82,14 @@ export default function ConversionsGuide() {
 
         <FloralDivider variant="vine" size="sm" className="my-6" />
 
-        <h2 className="text-2xl font-semibold mb-4">Quick Oven Temperature Guide</h2>
+        {/* ⭐ HEADER 3 */}
+        <div className="flex items-center gap-2 mb-4 mt-2">
+          <img src={iconMushroom} className="w-7 h-7 opacity-90" />
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-wide">
+            Quick Oven Temperature Guide
+          </h2>
+        </div>
+
         <ul className="list-disc pl-6 space-y-1">
           <li>300°F = 150°C</li>
           <li>325°F = 165°C</li>
@@ -71,7 +100,14 @@ export default function ConversionsGuide() {
 
         <FloralDivider variant="vine" size="sm" className="my-6" />
 
-        <h2 className="text-2xl font-semibold mb-4">Common Substitutions</h2>
+        {/* ⭐ HEADER 4 */}
+        <div className="flex items-center gap-2 mb-4 mt-2">
+          <img src={iconMushroom} className="w-7 h-7 opacity-90" />
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-wide">
+            Common Substitutions
+          </h2>
+        </div>
+
         <ul className="list-disc pl-6 space-y-1">
           <li>1 egg = ¼ cup applesauce or ½ mashed banana</li>
           <li>1 cup buttermilk = 1 tbsp vinegar + milk to make 1 cup</li>
