@@ -13,43 +13,6 @@ interface Printable {
   pdf: string;
 }
 
-const printables: Printable[] = [
-  {
-    id: "cups",
-    title: "Cups to Grams Chart",
-    thumb: "/printables/printable-cups.jpg",
-    full: "/printables/printable-cups.jpg",
-    pdf: "/printables/printable-cups.pdf",
-  },
-  {
-    id: "kitchen",
-    title: "Kitchen Tools Chart",
-    thumb: "/printables/printable-kitchen.jpg",
-    full: "/printables/printable-kitchen.jpg",
-    pdf: "/printables/printable-kitchen.pdf",
-  },
-  {
-    id: "liquid",
-    title: "Liquid Conversions",
-    thumb: "/printables/printable-liquid.jpg",
-    full: "/printables/printable-liquid.jpg",
-    pdf: "/printables/printable-liquid.pdf",
-  },
-  {
-    id: "oven",
-    title: "Oven Temperature Chart",
-    thumb: "/printables/printable-oven.jpg",
-    full: "/printables/printable-oven.jpg",
-    pdf: "/printables/printable-oven.pdf",
-  },
-  {
-    id: "subs",
-    title: "Ingredient Substitutions Chart",
-    thumb: "/printables/printable-subs.jpg",
-    full: "/printables/printable-subs.jpg",
-    pdf: "/printables/printable-subs.pdf",
-  },
-];
 
 export default function Printables() {
   const [active, setActive] = useState<Printable | null>(null);
