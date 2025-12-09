@@ -4,6 +4,9 @@ import Accordion from "@/components/Accordion";
 import FloralDivider from "@/components/FloralDivider";
 import faqBanner from "@/assets/banners/faq-banner.png";
 
+// ⭐ NEW — FAQ background image
+import bgFaq from "@/assets/backgrounds/bg-faq.jpg";
+
 export default function FAQ() {
   /* ---------------------- Categorized FAQs ---------------------- */
 
@@ -95,10 +98,9 @@ export default function FAQ() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-0 pb-24">
-
+    <div className="pb-24">
       {/* ⭐ PAGE BANNER */}
-      <div className="w-full h-40 sm:h-48 md:h-56 relative flex items-center justify-center mb-6 rounded-b-2xl overflow-hidden shadow">
+      <div className="w-full h-40 sm:h-48 md:h-56 relative flex items-center justify-center mb-0 rounded-b-2xl overflow-hidden shadow">
         <img
           src={faqBanner}
           alt="FAQ Banner"
@@ -110,110 +112,125 @@ export default function FAQ() {
         </h1>
       </div>
 
-      <FloralDivider variant="vine" size="md" />
+      {/* ⭐ DIVIDER BEFORE BACKGROUND */}
+      <FloralDivider variant="vine" size="md" className="mt-4" />
 
-      {/* ---------------------- CALCULATOR FAQ SECTION ---------------------- */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold text-[#4b3b2f] mb-3 flex items-center gap-2">
-          🍵 Using the Calculator
-        </h2>
+      {/* ⭐ BACKGROUND STARTS *BELOW* THE DIVIDER */}
+      <div
+        className="pt-8 pb-24"
+        style={{
+          backgroundImage: `url(${bgFaq})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+        }}
+      >
+        <div className="max-w-4xl mx-auto p-0">
 
-        <div className="space-y-4">
-          {calculatorFAQs.map((faq, idx) => (
-            <Accordion
-              key={idx}
-              title={faq.title}
-              icon={faq.icon}
-              className={accordionStyle}
-            >
-              <p className="leading-relaxed">{faq.content}</p>
-            </Accordion>
-          ))}
+          {/* ---------------------- CALCULATOR FAQ SECTION ---------------------- */}
+          <section className="mt-4">
+            <h2 className="text-2xl font-bold text-[#4b3b2f] mb-3 flex items-center gap-2">
+              🍵 Using the Calculator
+            </h2>
+
+            <div className="space-y-4">
+              {calculatorFAQs.map((faq, idx) => (
+                <Accordion
+                  key={idx}
+                  title={faq.title}
+                  icon={faq.icon}
+                  className={accordionStyle}
+                >
+                  <p className="leading-relaxed">{faq.content}</p>
+                </Accordion>
+              ))}
+            </div>
+          </section>
+
+          <FloralDivider variant="mushroom" className="my-8" />
+
+          {/* ---------------------- MEASUREMENT FAQ SECTION ---------------------- */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#4b3b2f] mb-3 flex items-center gap-2">
+              📏 Measurement & Conversion
+            </h2>
+
+            <div className="space-y-4">
+              {measurementFAQs.map((faq, idx) => (
+                <Accordion
+                  key={idx}
+                  title={faq.title}
+                  icon={faq.icon}
+                  className={accordionStyle}
+                >
+                  <p className="leading-relaxed">{faq.content}</p>
+                </Accordion>
+              ))}
+            </div>
+          </section>
+
+          <FloralDivider variant="vine" className="my-8" />
+
+          {/* ---------------------- APP USAGE FAQ SECTION ---------------------- */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#4b3b2f] mb-3 flex items-center gap-2">
+              📱 About the App
+            </h2>
+
+            <div className="space-y-4">
+              {appUseFAQs.map((faq, idx) => (
+                <Accordion
+                  key={idx}
+                  title={faq.title}
+                  icon={faq.icon}
+                  className={accordionStyle}
+                >
+                  <p className="leading-relaxed">{faq.content}</p>
+                </Accordion>
+              ))}
+            </div>
+          </section>
+
+          <FloralDivider variant="mushroom" className="my-8" />
+
+          {/* ---------------------- FUTURE FEATURES FAQ SECTION ---------------------- */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#4b3b2f] mb-3 flex items-center gap-2">
+              🌟 Future Features & Updates
+            </h2>
+
+            <div className="space-y-4">
+              {futureFAQs.map((faq, idx) => (
+                <Accordion
+                  key={idx}
+                  title={faq.title}
+                  icon={faq.icon}
+                  className={accordionStyle}
+                >
+                  <p className="leading-relaxed">{faq.content}</p>
+                </Accordion>
+              ))}
+            </div>
+          </section>
+
+          {/* ---------------------- BOTTOM CARD WITH LINKS ---------------------- */}
+          <div className="parchment-card p-6 text-center mt-12 rounded-2xl shadow-md bg-[#fffaf4]/95 border border-[#e4d5b8]">
+            <h2 className="text-xl font-bold text-[#1b302c] mb-3">
+              Still have questions?
+            </h2>
+            <p className="text-[#5f3c43]">
+              Explore the{" "}
+              <Link to="/guide" className="font-semibold underline text-emerald-700 hover:text-emerald-900">
+                Kitchen Conversions Guide
+              </Link>{" "}
+              for more details, or open the{" "}
+              <Link to="/calculator" className="font-semibold underline text-emerald-700 hover:text-emerald-900">
+                Calculator
+              </Link>{" "}
+              for instant help.
+            </p>
+          </div>
+
         </div>
-      </section>
-
-      <FloralDivider variant="mushroom" className="my-8" />
-
-      {/* ---------------------- MEASUREMENT FAQ SECTION ---------------------- */}
-      <section>
-        <h2 className="text-2xl font-bold text-[#4b3b2f] mb-3 flex items-center gap-2">
-          📏 Measurement & Conversion
-        </h2>
-
-        <div className="space-y-4">
-          {measurementFAQs.map((faq, idx) => (
-            <Accordion
-              key={idx}
-              title={faq.title}
-              icon={faq.icon}
-              className={accordionStyle}
-            >
-              <p className="leading-relaxed">{faq.content}</p>
-            </Accordion>
-          ))}
-        </div>
-      </section>
-
-      <FloralDivider variant="vine" className="my-8" />
-
-      {/* ---------------------- APP USAGE FAQ SECTION ---------------------- */}
-      <section>
-        <h2 className="text-2xl font-bold text-[#4b3b2f] mb-3 flex items-center gap-2">
-          📱 About the App
-        </h2>
-
-        <div className="space-y-4">
-          {appUseFAQs.map((faq, idx) => (
-            <Accordion
-              key={idx}
-              title={faq.title}
-              icon={faq.icon}
-              className={accordionStyle}
-            >
-              <p className="leading-relaxed">{faq.content}</p>
-            </Accordion>
-          ))}
-        </div>
-      </section>
-
-      <FloralDivider variant="mushroom" className="my-8" />
-
-      {/* ---------------------- FUTURE FEATURES FAQ SECTION ---------------------- */}
-      <section>
-        <h2 className="text-2xl font-bold text-[#4b3b2f] mb-3 flex items-center gap-2">
-          🌟 Future Features & Updates
-        </h2>
-
-        <div className="space-y-4">
-          {futureFAQs.map((faq, idx) => (
-            <Accordion
-              key={idx}
-              title={faq.title}
-              icon={faq.icon}
-              className={accordionStyle}
-            >
-              <p className="leading-relaxed">{faq.content}</p>
-            </Accordion>
-          ))}
-        </div>
-      </section>
-
-      {/* ---------------------- BOTTOM CARD WITH LINKS ---------------------- */}
-      <div className="parchment-card p-6 text-center mt-12 rounded-2xl shadow-md bg-[#fffaf4]/95 border border-[#e4d5b8]">
-        <h2 className="text-xl font-bold text-[#1b302c] mb-3">
-          Still have questions?
-        </h2>
-        <p className="text-[#5f3c43]">
-          Explore the{" "}
-          <Link to="/guide" className="font-semibold underline text-emerald-700 hover:text-emerald-900">
-            Kitchen Conversions Guide
-          </Link>{" "}
-          for more details, or open the{" "}
-          <Link to="/calculator" className="font-semibold underline text-emerald-700 hover:text-emerald-900">
-            Calculator
-          </Link>{" "}
-          for instant help.
-        </p>
       </div>
     </div>
   );
