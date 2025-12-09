@@ -1,4 +1,3 @@
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -23,58 +22,51 @@ const queryClient = new QueryClient();
 const App = () => (
   <ThemeProvider defaultTheme="light">
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppLayout />}>
 
-        <BrowserRouter>
-          <Routes>
-            <Route element={<AppLayout />}>
+            {/* HOME */}
+            <Route path="/" element={<Dashboard />} />
 
-              {/* HOME */}
-              <Route path="/" element={<Dashboard />} />
+            {/* GUIDE */}
+            <Route path="/guide" element={<ConversionsGuide />} />
 
-              {/* GUIDE */}
-              <Route path="/guide" element={<ConversionsGuide />} />
+            {/* RECIPES LIST */}
+            <Route path="/recipes" element={<Recipes />} />
 
-              {/* RECIPES LIST */}
-              <Route path="/recipes" element={<Recipes />} />
+            {/* RECIPE DETAILS */}
+            <Route path="/recipes/:id" element={<RecipeDetails />} />
 
-              {/* RECIPE DETAILS */}
-              <Route path="/recipes/:id" element={<RecipeDetails />} />
+            {/* RECIPE → CONVERTER PREVIEW */}
+            <Route
+              path="/recipes/:id/convert"
+              element={<RecipeConvertPreview />}
+            />
 
-              {/* RECIPE → CONVERTER PREVIEW */}
-              <Route
-                path="/recipes/:id/convert"
-                element={<RecipeConvertPreview />}
-              />
+            {/* CALCULATOR */}
+            <Route path="/calculator" element={<Calculator />} />
 
-              {/* CALCULATOR */}
-              <Route path="/calculator" element={<Calculator />} />
+            {/* PRINTABLES */}
+            <Route path="/printables" element={<Printables />} />
 
-              {/* PRINTABLES */}
-              <Route path="/printables" element={<Printables />} />
+            {/* FAQ */}
+            <Route path="/faq" element={<FAQ />} />
 
-              {/* FAQ */}
-              <Route path="/faq" element={<FAQ />} />
+            {/* ABOUT */}
+            <Route path="/about" element={<About />} />
 
-              {/* ABOUT */}
-              <Route path="/about" element={<About />} />
+            {/* TEMPLATE PREVIEW */}
+            <Route
+              path="/template/:name"
+              element={<TemplatePreview />}
+            />
+          </Route>
 
-              {/* TEMPLATE PREVIEW */}
-              <Route
-                path="/template/:name"
-                element={<TemplatePreview />}
-              />
-
-            </Route>
-
-            {/* NOT FOUND */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-
-      </TooltipProvider>
+          {/* NOT FOUND */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
     </QueryClientProvider>
   </ThemeProvider>
 );
