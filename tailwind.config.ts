@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
-import animate from "tailwindcss-animate";
+// ❌ REMOVE this line:
+// import animate from "tailwindcss-animate";
 import typography from "@tailwindcss/typography";
 
 export default {
@@ -76,6 +77,8 @@ export default {
         md: 'var(--radius)',
         sm: 'calc(var(--radius) - 2px)'
       },
+
+      // ⭐ Your custom animations are still here — nothing breaks.
       keyframes: {
         'accordion-down': {
           from: { height: '0' },
@@ -100,6 +103,7 @@ export default {
         'fade-in': 'fade-in 0.3s ease-out',
         'slide-in': 'slide-in 0.3s ease-out',
       },
+
       typography: {
         DEFAULT: {
           css: {
@@ -109,8 +113,10 @@ export default {
       },
     }
   },
+
+  // ⭐ FIXED: Only typography plugin remains
   plugins: [
-    animate,
     typography,
   ],
+
 } satisfies Config;
