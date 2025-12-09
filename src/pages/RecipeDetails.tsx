@@ -2,7 +2,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import FloralDivider from "@/components/FloralDivider";
 import DecorativeFrame from "@/components/DecorativeFrame";
-import "@/styles/recipe-details.css"; // optional if using external CSS
 
 import bgGuide from "@/assets/backgrounds/bg-guide.jpg";
 
