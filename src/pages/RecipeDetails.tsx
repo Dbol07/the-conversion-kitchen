@@ -1,223 +1,154 @@
-import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import DecorativeFrame from "../components/DecorativeFrame";
-import FloralDivider from "../components/FloralDivider";
-import recipesBanner from "@/assets/banners/recipes-banner.png";
+import { useQuery } from "@tanstack/react-query";
+import FloralDivider from "@/components/FloralDivider";
+import DecorativeFrame from "@/components/DecorativeFrame";
+import "@/styles/recipe-details.css"; // optional if using external CSS
 
-const API_KEY = import.meta.env.VITE_SPOONACULAR_KEY as string;
+import bgGuide from "@/assets/backgrounds/bg-guide.jpg";
 
-interface Ingredient {
-  id: number;
-  original: string;
-}
-
-interface Step {
-  number: number;
-  step: string;
-}
-
-interface RecipeData {
-  id: number;
-  title: string;
-  image?: string;
-  summary?: string;
-  servings?: number;
-  extendedIngredients?: Ingredient[];
-  analyzedInstructions?: { steps: Step[] }[];
-  nutrition?: { nutrients: { name: string; amount: number; unit: string }[] };
-}
-
-/* ------------------- SUMMARY CLEANING ---------------------- */
-function stripHtml(html: string | undefined | null): string {
-  if (!html) return "";
-  return html.replace(/<[^>]+>/g, "");
-}
-
-/*  Highlight servings phrases */
-function highlightServings(text: string) {
-  return text.replace(
-    /\b(serves|yields|makes)\s+\d+/gi,
-    match => `<span class="serving-highlight">${match}</span>`
-  );
-}
-
-/*  Convert Spoonacular “related recipe” text into internal search tags */
+// Detect multi-word capitalized phrases → convert into internal search links
 function convertRelatedLinks(text: string) {
   return text.replace(
-    /\b([A-Za-z][A-Za-z0-9\s'&-]+cake|muffin|cookies?|bread)\b/gi,
-    (m) =>
+    /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,6})\b/g,
+    (match) =>
       `<a class="related-chip" href="/recipes?search=${encodeURIComponent(
-        m
-      )}">${m}</a>`
+        match
+      )}">${match}</a>`
   );
-}
-
-/* Apply all cleaning steps */
-function processSummary(html: string | undefined | null): string {
-  let clean = stripHtml(html);
-  clean = highlightServings(clean);
-  clean = convertRelatedLinks(clean);
-  return clean;
 }
 
 export default function RecipeDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [recipe, setRecipe] = useState<RecipeData | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  async function loadRecipe() {
-    try {
-      const res = await fetch(
-        `https://api.spoonacular.com/recipes/${id}/information?apiKey=${API_KEY}&includeNutrition=true`
-      );
-      const data: RecipeData = await res.json();
+  const { data: recipe, isLoading, error } = useQuery({
+    queryKey: ["recipe", id],
+    queryFn: async () => {
+      const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${
+        import.meta.env.VITE_SPOONACULAR_API_KEY
+      }&includeNutrition=true`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch recipe");
+      return res.json();
+    },
+  });
 
-      setRecipe({
-        ...data,
-        summary: processSummary(data.summary)
-      });
-    } catch (err) {
-      console.error("Failed to load recipe", err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    if (id) loadRecipe();
-  }, [id]);
-
-  if (loading)
-    return (
-      <div className="text-center text-[#4b3b2f] mt-20">Loading recipe…</div>
-    );
-
-  if (!recipe)
-    return (
-      <div className="text-center text-[#4b3b2f] mt-20">Recipe not found.</div>
-    );
-
-  /* Copy Ingredients */
-  function copyIngredients() {
-    const servings = recipe.servings ? `Ingredients (serves ${recipe.servings})\n\n` : "Ingredients\n\n";
-    const list = recipe.extendedIngredients?.map(i => `• ${i.original}`).join("\n") ?? "";
-    navigator.clipboard.writeText(servings + list);
-    alert("Ingredients copied!");
-  }
+  if (isLoading) return <p className="text-center mt-10">Loading recipe…</p>;
+  if (error) return <p className="text-center mt-10 text-red-600">Error loading recipe.</p>;
+  if (!recipe) return <p className="text-center mt-10">Recipe not found.</p>;
 
   return (
-    <div className="min-h-screen pb-24 bg-[#1b302c]/20">
+    <div
+      className="min-h-screen w-full pb-28"
+      style={{
+        backgroundImage: `url(${bgGuide})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* Lightened overlay */}
+      <div className="bg-[#1b302c]/15 min-h-screen px-4 py-10">
+        <div className="max-w-3xl mx-auto">
+          {/* Header + Back Button */}
+          <button
+            className="mb-4 px-4 py-2 bg-[#b8d3d5] text-[#1b302c] rounded-xl shadow hover:bg-[#9bc9ae]"
+            onClick={() => navigate(-1)}
+          >
+            ← Back
+          </button>
 
-      {/* ⭐ PAGE BANNER */}
-      <div className="relative w-full max-w-4xl mx-auto mb-8 rounded-b-2xl overflow-hidden shadow-xl">
-        <img
-          src={recipesBanner}
-          alt="Recipe Banner"
-          className="w-full h-48 sm:h-56 md:h-64 object-cover"
-        />
-        <div className="absolute inset-0 bg-[#1b302c]/35" />
+          <h1 className="text-4xl font-bold text-white text-center drop-shadow-lg mb-4">
+            {recipe.title}
+          </h1>
 
-        <h1 className="absolute inset-0 flex items-center justify-center text-center
-                       text-3xl sm:text-4xl font-bold text-white drop-shadow-xl px-4">
-          {recipe.title}
-        </h1>
-      </div>
+          <FloralDivider variant="vine" />
 
-      {/* BACK BUTTON */}
-      <div className="max-w-3xl mx-auto px-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-4 px-4 py-2 bg-[#b8d3d5] text-[#1b302c] rounded-xl shadow 
-                     hover:bg-[#a77a72] hover:text-white transition"
-        >
-          ← Back
-        </button>
-      </div>
+          <DecorativeFrame className="mt-6">
+            <div className="p-6 space-y-6">
+              {/* Recipe image */}
+              {recipe.image && (
+                <img
+                  src={recipe.image}
+                  alt={recipe.title}
+                  className="w-full rounded-xl shadow-md"
+                />
+              )}
 
-      <div className="max-w-3xl mx-auto px-4">
-        <DecorativeFrame>
-          <div className="parchment-card p-6">
-
-            {/* IMAGE */}
-            {recipe.image && (
-              <img
-                src={recipe.image}
-                alt={recipe.title}
-                className="rounded-xl shadow mb-6 w-full"
+              {/* Summary text (with styled box & clickable links) */}
+              <div
+                className="text-[#5f3c43] leading-relaxed bg-[#f7e6c4]/40 p-4 rounded-xl shadow-sm"
+                dangerouslySetInnerHTML={{
+                  __html: convertRelatedLinks(recipe.summary || ""),
+                }}
               />
-            )}
 
-            {/* SUMMARY */}
-            <div
-              className="text-[#5f3c43] mb-6 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: recipe.summary || "" }}
-            />
+              <FloralDivider variant="floral-thin" />
 
-            <FloralDivider variant="mushroom" />
+              {/* INGREDIENTS */}
+              <h2 className="text-xl font-bold text-[#1b302c] mt-2">Ingredients</h2>
 
-            {/* INGREDIENTS */}
-            <h2 className="text-xl font-bold text-[#1b302c] mt-6">Ingredients</h2>
+              {/* Highlight serving size */}
+              {recipe.servings && (
+                <p className="text-[#5f3c43] italic mb-2">
+                  Makes / Serves:{" "}
+                  <span className="font-bold serving-highlight">
+                    {recipe.servings}
+                  </span>
+                </p>
+              )}
 
-            {recipe.extendedIngredients?.length ? (
-              <>
-                <ul className="list-disc list-inside mt-2 mb-4 text-[#5f3c43]">
-                  {recipe.extendedIngredients.map(i => (
-                    <li key={i.id}>{i.original}</li>
-                  ))}
-                </ul>
+              <ul className="list-disc list-inside text-[#1b302c] space-y-1">
+                {recipe.extendedIngredients?.map((ingredient: any) => (
+                  <li key={ingredient.id}>{ingredient.original}</li>
+                ))}
+              </ul>
 
-                <button
-                  onClick={copyIngredients}
-                  className="px-4 py-2 bg-[#3c6150] text-white rounded-xl shadow hover:bg-[#2b4c3c] transition"
-                >
-                  Copy Ingredients
-                </button>
-              </>
-            ) : (
-              <p className="italic text-[#5f3c43]">No ingredients listed.</p>
-            )}
+              {/* Copy Ingredients Button */}
+              <button
+                onClick={() => {
+                  const textToCopy = `
+${recipe.title}
+Ingredients (serves ${recipe.servings}):
+${recipe.extendedIngredients?.map((i: any) => `- ${i.original}`).join("\n")}
+                  `;
+                  navigator.clipboard.writeText(textToCopy.trim());
+                  alert("Ingredients copied!");
+                }}
+                className="px-6 py-3 bg-[#3c6150] text-white rounded-xl shadow hover:bg-[#2f4d41] ease-in-out duration-300"
+              >
+                Copy Ingredients
+              </button>
 
-            <FloralDivider variant="vine" />
+              <FloralDivider variant="mushroom-thin" />
 
-            {/* INSTRUCTIONS */}
-            <h2 className="text-xl font-bold text-[#1b302c] mt-6">Instructions</h2>
+              {/* INSTRUCTIONS */}
+              <h2 className="text-xl font-bold text-[#1b302c]">Instructions</h2>
 
-            {recipe.analyzedInstructions?.length ? (
-              <ol className="list-decimal list-inside space-y-2 mt-2 text-[#5f3c43] leading-relaxed">
-                {recipe.analyzedInstructions[0].steps.map(s => (
-                  <li key={s.number}>{s.step}</li>
+              <ol className="list-decimal list-inside text-[#1b302c] space-y-2 leading-relaxed">
+                {recipe.analyzedInstructions?.[0]?.steps?.map((step: any) => (
+                  <li key={step.number}>{step.step}</li>
                 ))}
               </ol>
-            ) : (
-              <p className="italic text-[#5f3c43]">Instructions unavailable.</p>
-            )}
 
-            <FloralDivider variant="mushroom" />
+              <FloralDivider variant="floral" />
 
-            {/* NUTRITION */}
-            {recipe.nutrition?.nutrients && (
-              <>
-                <h2 className="text-xl font-bold text-[#1b302c] mt-6">
-                  Nutrition Highlights
-                </h2>
+              {/* NUTRITION */}
+              <h2 className="text-xl font-bold text-[#1b302c]">Nutrition Highlights</h2>
 
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  {recipe.nutrition.nutrients.slice(0, 6).map((n, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 bg-[#b8d3d5]/20 rounded-xl shadow text-[#3c6150]"
-                    >
-                      <p className="font-semibold">{n.name}</p>
-                      <p>{n.amount} {n.unit}</p>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-          </div>
-        </DecorativeFrame>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                {recipe.nutrition?.nutrients?.slice(0, 8).map((nutrient: any, index: number) => (
+                  <div
+                    key={index}
+                    className="bg-[#f7e6c4]/60 p-4 rounded-xl shadow text-[#5f3c43]"
+                  >
+                    <p className="font-bold">{nutrient.name}</p>
+                    <p>{nutrient.amount} {nutrient.unit}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DecorativeFrame>
+        </div>
       </div>
     </div>
   );
