@@ -214,3 +214,47 @@ details[open] {
   opacity: 1;
   transform: translateY(0) scale(1);
 }
+/* ============================================
+   SOURCE BADGE (MealDB • Spoonacular)
+   Soft cottagecore aesthetic
+=============================================== */
+
+.source-badge {
+  display: inline-block;
+  background: #f2ebd7;              /* warm parchment */
+  color: #3c6150;                    /* soft green text */
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #d9c7a3;         /* warm gold border */
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.08);
+  pointer-events: none;              /* badge shouldn't be clickable */
+}
+
+.source-badge.mealdb {
+  background: #e8f5e9;               /* pale herbal green */
+  border-color: #b8d3b2;
+  color: #2f4d41;
+}
+
+.source-badge.spoonacular {
+  background: #fdebd3;               /* warm apricot */
+  border-color: #f2d1a9;
+  color: #5f3c43;
+}
+
+/* Optional: hover glowing effect for cards */
+.recipe-card:hover .source-badge {
+  box-shadow: 0 0 6px rgba(60,97,80,0.25);
+}
+
+/* Thumb normalization so MealDB squares look consistent */
+.recipe-thumb {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-bottom: 1px solid #d9c7a3;
+}
+
