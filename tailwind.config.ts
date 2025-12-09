@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 // ❌ REMOVE this line:
 // import animate from "tailwindcss-animate";
-import typography from "@tailwindcss/typography";
 
 export default {
   darkMode: ["class"],
@@ -114,9 +113,8 @@ export default {
     }
   },
 
-  // ⭐ FIXED: Only typography plugin remains
-  plugins: [
-    typography,
-  ],
+  // 
+ plugins: [],
+
 
 } satisfies Config;
