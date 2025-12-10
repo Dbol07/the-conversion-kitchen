@@ -1,230 +1,283 @@
-// src/pages/RecipeDetails.tsx — Dual-source (MealDB + Spoonacular)
-
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-
+// src/pages/RecipeDetails.tsx
+import { useEffect, useState } from "react";
+import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
 import FloralDivider from "@/components/FloralDivider";
-import DecorativeFrame from "@/components/DecorativeFrame";
+import Tooltip from "@/components/Tooltip";
+import { fetchMealDbRecipe } from "@/utils/mealdb"; // CORRECT SOURCE
+import "@/index.css";
 
-import bgGuide from "@/assets/backgrounds/bg-guide.jpg";
-
-import { mealdbLookup } from "@/utils/mealdb";
-import { trackedSpoonFetch, getSpoonUsage } from "@/utils/spoonacularUsage";
-
-// Convert capitalized words into internal recipe links
-function convertRelatedLinks(text: string) {
-  return text.replace(
-    /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,6})\b/g,
-    (match) =>
-      `<a class="related-chip" href="/recipes?search=${encodeURIComponent(
-        match
-      )}">${match}</a>`
-  );
+interface RecipeData {
+  idMeal: string;
+  strMeal: string;
+  strMealThumb: string;
+  strInstructions: string;
+  strArea?: string;
+  strCategory?: string;
+  ingredients: { ingredient: string; measure: string }[];
 }
 
-// Pretty fallback UI for Spoonacular rate limits
-function RateLimitMessage({ usage }: any) {
-  const minutes =
-    usage.blockedMsRemaining > 0
-      ? Math.max(1, Math.ceil(usage.blockedMsRemaining / 60000))
-      : 1;
+/* ----------------------------------------------------
+   HELPERS: Temperature + Length Detection
+---------------------------------------------------- */
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f2ebd7] px-4">
-      <div className="max-w-md mx-auto p-6 rounded-2xl bg-white/90 shadow text-center space-y-3">
-        <h2 className="text-xl font-bold text-[#5f3c43]">
-          We’ve reached today’s recipe limit 🌙
-        </h2>
-        <p className="text-sm text-[#5f3c43] leading-relaxed">
-          Spoonacular’s free API only allows a small number of recipe lookups
-          per day. You’ve used{" "}
-          <strong>
-            {usage.count}/{usage.dailyLimit}
-          </strong>{" "}
-          calls today.
-        </p>
-        <p className="text-xs text-[#5f3c43]">
-          The kitchen faeries are taking a tiny break. Please try again in about{" "}
-          <strong>{minutes} minute(s)</strong>.
-        </p>
-      </div>
-    </div>
-  );
+// Detect Celsius like "180C" or "180°C"
+const celsiusRegex = /(\d{2,3})\s?°?C\b/gi;
+
+// Detect centimeters: "20cm" or "20 cm"
+const cmRegex = /(\d+)\s?cm\b/gi;
+
+// Convert °C → °F
+function cToF(c: number) {
+  return Math.round((c * 9) / 5 + 32);
 }
+
+// Convert cm → inches
+function cmToIn(cm: number) {
+  return Math.round((cm / 2.54) * 10) / 10;
+}
+
+// Fan oven rule: -20°C
+function fanOven(c: number) {
+  return c - 20;
+}
+
+/* ----------------------------------------------------
+   TOOLTIP-WRAPPED STRING REPLACER
+---------------------------------------------------- */
+
+function enhanceInstructionText(instruction: string) {
+  if (!instruction) return instruction;
+
+  let updated = instruction;
+
+  // Temperature conversions
+  updated = updated.replace(celsiusRegex, (full, c) => {
+    const cNum = Number(c);
+    const fNum = cToF(cNum);
+    const fan = fanOven(cNum);
+
+    return `<temp data="${cNum}" tooltip="${fNum}" fan="${fan}">${cNum}°C</temp>`;
+  });
+
+  // Length conversions
+  updated = updated.replace(cmRegex, (full, cm) => {
+    const cmNum = Number(cm);
+    const inchNum = cmToIn(cmNum);
+
+    return `<len data="${cmNum}" tooltip="${inchNum}">${cmNum}cm</len>`;
+  });
+
+  return updated;
+}
+
+/* ----------------------------------------------------
+   PARSE INSTRUCTIONS INTO REACT ELEMENTS
+---------------------------------------------------- */
+
+function renderEnhancedText(text: string) {
+  const parts = text
+    .split(/(<temp[^>]*>.*?<\/temp>|<len[^>]*>.*?<\/len>)/g)
+    .filter(Boolean);
+
+  return parts.map((part, i) => {
+    if (part.startsWith("<temp")) {
+      const c = Number(part.match(/data="(\d+)"/)?.[1]);
+      const f = Number(part.match(/tooltip="(\d+)"/)?.[1]);
+      const fan = Number(part.match(/fan="(\d+)"/)?.[1]);
+
+      return (
+        <Tooltip
+          key={i}
+          label={`${c}°C → ${f}°F\nFan oven: ${fan}°C`}
+          rounded
+          subtle
+        >
+          <span className="highlight-temp">{c}°C</span>
+        </Tooltip>
+      );
+    }
+
+    if (part.startsWith("<len")) {
+      const cm = Number(part.match(/data="(\d+)"/)?.[1]);
+      const inch = Number(part.match(/tooltip="([\d.]+)"/)?.[1]);
+
+      return (
+        <Tooltip
+          key={i}
+          label={`${cm} cm → ${inch} in`}
+          rounded
+          subtle
+        >
+          <span className="highlight-length">{cm}cm</span>
+        </Tooltip>
+      );
+    }
+
+    return <span key={i}>{part}</span>;
+  });
+}
+
+/* ----------------------------------------------------
+   MAIN COMPONENT
+---------------------------------------------------- */
 
 export default function RecipeDetails() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // From Recipes.tsx we added "?source=mealdb" or "?source=spoonacular"
-  const source = searchParams.get("source") || "mealdb"; // default safe
+  const source = searchParams.get("source") || "mealdb";
 
-  // Unified loader for both sources
-  const { data: recipe, isLoading, error } = useQuery({
-    queryKey: ["recipeDetails", id, source],
-    queryFn: async () => {
-      if (source === "mealdb") {
-        // ⭐ Load from TheMealDB Premium
-        return mealdbLookup(id!);
+  const [recipe, setRecipe] = useState<RecipeData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const [showLegend, setShowLegend] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        if (source === "mealdb") {
+          const data = await fetchMealDbRecipe(id!);
+          setRecipe(data);
+        }
+
+        // (Optional) fallback for Spoonacular if you re-enable later  
+      } catch (err) {
+        console.error("Error loading recipe:", err);
+      } finally {
+        setLoading(false);
       }
+    }
 
-      // ⭐ Otherwise load from Spoonacular
-      const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${
-        import.meta.env.VITE_SPOONACULAR_API_KEY
-      }&includeNutrition=true`;
+    load();
+  }, [id, source]);
 
-      const res = await trackedSpoonFetch(url);
-
-      if (!res.ok) throw new Error("FETCH_ERROR");
-      const data = await res.json();
-
-      return {
-        id: data.id.toString(),
-        title: data.title,
-        image: data.image || "",
-        instructions:
-          data.analyzedInstructions?.[0]?.steps?.map((s: any) => s.step) || [],
-        ingredients:
-          data.extendedIngredients?.map((i: any) => ({
-            original: i.original,
-          })) || [],
-        servings: data.servings,
-        category: data.dishTypes?.[0],
-        area: data.cuisines?.[0],
-        summary: data.summary || "",
-        source: "spoonacular",
-      };
-    },
-    staleTime: 1000 * 60 * 60, // 1 hour caching (MealDB allows)
-  });
-
-  const usage = getSpoonUsage();
-
-  // Handle Spoonacular rate limit
-  const isLimitError =
-    error &&
-    ((error as any).message === "SPOON_DAILY_LIMIT" ||
-      (error as any).message === "SPOON_RATE_LIMIT");
-
-  if (isLimitError) {
-    return <RateLimitMessage usage={usage} />;
-  }
-
-  if (isLoading) {
-    return <p className="text-center mt-10 text-[#1b302c]">Loading recipe…</p>;
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-[#4b3b2f] text-xl">
+        Loading…
+      </div>
+    );
   }
 
   if (!recipe) {
     return (
-      <p className="text-center mt-10 text-[#1b302c]">
-        Recipe not found or unavailable.
-      </p>
+      <div className="p-8 text-center text-red-600 text-xl">
+        Recipe not found.
+      </div>
     );
   }
 
+  const enhancedInstructions = enhanceInstructionText(recipe.strInstructions);
+
   return (
-    <div
-      className="min-h-screen w-full pb-28"
-      style={{
-        backgroundImage: `url(${bgGuide})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <div className="bg-[#1b302c]/15 min-h-screen px-4 py-10">
-        <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto p-4 pb-24">
+      <button
+        onClick={() => navigate(-1)}
+        className="px-4 py-2 rounded-xl bg-[#dfe7df] text-[#1b302c] font-medium shadow border border-[#b8d3d5] mb-4"
+      >
+        ← Back
+      </button>
 
-          <button
-            className="mb-4 px-4 py-2 bg-[#b8d3d5] text-[#1b302c] rounded-xl shadow hover:bg-[#9bc99e]"
-            onClick={() => navigate(-1)}
-          >
-            ← Back
-          </button>
+      <h1 className="text-3xl font-bold text-center text-[#4b3b2f]">
+        {recipe.strMeal}
+      </h1>
 
-          <h1 className="text-4xl font-bold text-white text-center drop-shadow-lg mb-4">
-            {recipe.title}
-          </h1>
+      <FloralDivider variant="vine" size="sm" />
 
-          <FloralDivider variant="vine" />
+      {/* IMAGE */}
+      <div className="flex justify-center mt-4">
+        <img
+          src={recipe.strMealThumb}
+          alt={recipe.strMeal}
+          className="rounded-xl shadow-lg max-w-full"
+        />
+      </div>
 
-          <DecorativeFrame className="mt-6">
-            <div className="p-6 space-y-6">
+      <FloralDivider variant="floral" size="xs" />
 
-              {/* Image */}
-              {recipe.image && (
-                <img
-                  src={recipe.image}
-                  alt={recipe.title}
-                  className="w-full rounded-xl shadow-md"
-                />
-              )}
+      {/* INGREDIENTS */}
+      <section className="mt-6">
+        <h2 className="text-xl font-semibold text-[#4b3b2f] mb-3">Ingredients</h2>
 
-              {/* SUMMARY (Spoonacular only) */}
-              {recipe.source === "spoonacular" && recipe.summary && (
-                <div
-                  className="text-[#5f3c43] leading-relaxed bg-[#f7e6c4]/40 p-4 rounded-xl shadow-sm"
-                  dangerouslySetInnerHTML={{
-                    __html: convertRelatedLinks(recipe.summary),
-                  }}
-                />
-              )}
+        <ul className="list-disc pl-6 space-y-1 text-[#3c2e22]">
+          {recipe.ingredients.map((item, i) =>
+            item.ingredient ? (
+              <li key={i}>
+                {item.measure} {item.ingredient}
+              </li>
+            ) : null
+          )}
+        </ul>
 
-              <FloralDivider variant="floral" />
+        <button
+          onClick={() =>
+            navigator.clipboard.writeText(
+              recipe.ingredients
+                .map((i) => `${i.measure} ${i.ingredient}`)
+                .join("\n")
+            )
+          }
+          className="mt-3 px-4 py-2 bg-emerald-700 text-white rounded-xl shadow hover:bg-emerald-800"
+        >
+          Copy Ingredients
+        </button>
+      </section>
 
-              {/* INGREDIENTS */}
-              <h2 className="text-xl font-bold text-[#1b302c] mt-2">Ingredients</h2>
+      <FloralDivider variant="floral" size="xs" />
 
-              {recipe.servings && (
-                <p className="text-[#5f3c43] italic mb-2">
-                  Makes / Serves:{" "}
-                  <span className="font-bold serving-highlight">
-                    {recipe.servings}
-                  </span>
-                </p>
-              )}
+      {/* INSTRUCTIONS */}
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold text-[#4b3b2f] mb-3">
+          Instructions
+        </h2>
 
-              <ul className="list-disc list-inside text-[#1b302c] space-y-1">
-                {recipe.ingredients.map((ing, idx) => (
-                  <li key={idx}>{ing.original}</li>
-                ))}
-              </ul>
+        <ol className="list-decimal pl-6 space-y-3 text-[#3c2e22] leading-relaxed">
+          {enhancedInstructions
+            .split(/\r?\n/)
+            .filter(Boolean)
+            .map((line, idx) => (
+              <li key={idx}>{renderEnhancedText(line)}</li>
+            ))}
+        </ol>
+      </section>
 
-              {/* COPY BUTTON */}
-              <button
-                onClick={() => {
-                  const text = `
-${recipe.title}
-Ingredients:
-${recipe.ingredients.map((i) => "- " + i.original).join("\n")}
-                  `;
-                  navigator.clipboard.writeText(text.trim());
-                  alert("Ingredients copied!");
-                }}
-                className="px-6 py-3 bg-[#3c6150] text-white rounded-xl shadow hover:bg-[#2f4d41]"
-              >
-                Copy Ingredients
-              </button>
+      {/* CALCULATOR BUTTON */}
+      <div className="mt-6 text-center">
+        <Link
+          to="/calculator?tab=full"
+          className="inline-block px-6 py-3 bg-amber-300 text-[#4b3b2f] rounded-xl shadow border border-[#d8c29a] hover:bg-amber-400"
+        >
+          Open Recipe Converter
+        </Link>
+      </div>
 
-              <FloralDivider variant="mushroom" />
+      <FloralDivider variant="vine" size="sm" />
 
-              {/* INSTRUCTIONS */}
-              <h2 className="text-xl font-bold text-[#1b302c]">Instructions</h2>
+      {/* LEGEND ACCORDION */}
+      <div className="mt-6">
+        <button
+          onClick={() => setShowLegend((p) => !p)}
+          className="w-full text-left px-4 py-3 rounded-xl bg-[#fff3d6] border border-[#e4d5b8] font-semibold text-[#4b3b2f]"
+        >
+          {showLegend ? "▼" : "►"} Help & Legend
+        </button>
 
-              {recipe.instructions.length === 0 ? (
-                <p className="text-[#5f3c43] italic">
-                  No instructions available.
-                </p>
-              ) : (
-                <ol className="list-decimal list-inside text-[#1b302c] space-y-2 leading-relaxed">
-                  {recipe.instructions.map((step, idx) => (
-                    <li key={idx}>{step}</li>
-                  ))}
-                </ol>
-              )}
-            </div>
-          </DecorativeFrame>
-        </div>
+        {showLegend && (
+          <div className="mt-3 bg-white/90 border border-[#e4d5b8] rounded-xl p-4 space-y-3">
+            <p className="text-sm">
+              <span className="highlight-temp px-2 py-1 rounded">180°C</span>  
+              → Tap to see °F + fan oven conversion.
+            </p>
+            <p className="text-sm">
+              <span className="highlight-length px-2 py-1 rounded">20cm</span>  
+              → Tap to show the equivalent in inches.
+            </p>
+            <p className="text-sm">
+              Fan oven temperatures are typically **20°C lower**.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

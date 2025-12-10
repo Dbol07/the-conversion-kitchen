@@ -1,140 +1,80 @@
 // src/utils/mealdb.ts
-// TheMealDB Premium integration for The Conversion Kitchen PWA
 
-// ===========================================
-// 🔑 PREMIUM API KEY // ===========================================
-const MEALDB_KEY = "65232507";
-
-// Premium API base
-const BASE = `https://www.themealdb.com/api/json/v2/${MEALDB_KEY}`;
-
-// ---------------------------------------------------------
-// TYPE DEFINITIONS (raw from API)
-// ---------------------------------------------------------
-
-export interface MealDBRaw {
+export interface MealDbRecipe {
   idMeal: string;
   strMeal: string;
-  strCategory: string | null;
-  strArea: string | null;
-  strInstructions: string | null;
-  strMealThumb: string | null;
-  [key: string]: any; // allow ingredient fields dynamically
+  strMealThumb: string;
+  strInstructions: string;
+  strArea?: string;
+  strCategory?: string;
+  ingredients: { ingredient: string; measure: string }[];
 }
+// SEARCH MealDB recipes by keyword
+export async function mealdbSearch(query: string) {
+  const key = import.meta.env.VITE_MEALDB_KEY || "1";
+  const url = `https://www.themealdb.com/api/json/v1/${key}/search.php?s=${encodeURIComponent(query)}`;
 
-export interface MealDBResponse {
-  meals: MealDBRaw[] | null;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("MealDB search failed");
+
+  const data = await res.json();
+  if (!data.meals) return [];
+
+  // Convert to unified preview format expected by Recipes.tsx
+  return data.meals.map((m: any) => ({
+    id: m.idMeal,
+    title: m.strMeal,
+    image: m.strMealThumb,
+    source: "mealdb" as const,
+  }));
 }
+                                                              
 
-// ---------------------------------------------------------
-// NORMALIZED TYPES (your PWA format)
-// ---------------------------------------------------------
+/* ----------------------------------------------------
+   Fetch a FULL RECIPE by ID (MealDB Premium API)
+---------------------------------------------------- */
 
-export interface UnifiedRecipePreview {
-  id: string;
-  title: string;
-  image: string;
-  source: "mealdb" | "spoonacular";
-}
+export async function fetchMealDbRecipe(id: string): Promise<MealDbRecipe> {
+  const key = import.meta.env.VITE_MEALDB_KEY || "1";
 
-export interface UnifiedRecipeDetails {
-  id: string;
-  title: string;
-  image: string;
-  instructions: string[];
-  ingredients: { original: string }[];
-  servings?: number;
-  source: "mealdb" | "spoonacular";
-  category?: string;
-  area?: string;
-}
+  const url = `https://www.themealdb.com/api/json/v1/${key}/lookup.php?i=${id}`;
 
-// ---------------------------------------------------------
-// INTERNAL HELPERS
-// ---------------------------------------------------------
+  const res = await fetch(url);
 
-// Extract ingredients from messy MealDB raw fields
-function extractIngredients(meal: MealDBRaw): { original: string }[] {
-  const list: { original: string }[] = [];
+  if (!res.ok) {
+    throw new Error(`MealDB HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  if (!data.meals?.length) {
+    throw new Error("Recipe not found");
+  }
+
+  const meal = data.meals[0];
+
+  // Build ingredients array
+  const ingredients: { ingredient: string; measure: string }[] = [];
 
   for (let i = 1; i <= 20; i++) {
     const ing = meal[`strIngredient${i}`];
     const meas = meal[`strMeasure${i}`];
 
     if (ing && ing.trim()) {
-      const line = meas && meas.trim()
-        ? `${meas.trim()} ${ing.trim()}`
-        : ing.trim();
-
-      list.push({ original: line });
+      ingredients.push({
+        ingredient: ing.trim(),
+        measure: meas?.trim() || "",
+      });
     }
   }
 
-  return list;
-}
-
-// MealDB instructions come as one block — split into clean steps
-function extractInstructions(text: string | null): string[] {
-  if (!text) return [];
-  return text
-    .split(/\r?\n|\./)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 3);
-}
-
-// ---------------------------------------------------------
-// 🔍 SEARCH (MealDB Premium)
-// ---------------------------------------------------------
-
-export async function mealdbSearch(query: string): Promise<UnifiedRecipePreview[]> {
-  if (!query || query.trim().length === 0) return [];
-
-  const url = `${BASE}/search.php?s=${encodeURIComponent(query)}`;
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    console.warn("[MealDB] Search request failed", res.status);
-    return [];
-  }
-
-  const data: MealDBResponse = await res.json();
-  if (!data.meals) return [];
-
-  return data.meals.map((meal) => ({
-    id: meal.idMeal,
-    title: meal.strMeal,
-    image: meal.strMealThumb || "",
-    source: "mealdb" as const,
-  }));
-}
-
-// ---------------------------------------------------------
-// 📘 LOOKUP FULL DETAILS (MealDB Premium)
-// ---------------------------------------------------------
-
-export async function mealdbLookup(id: string): Promise<UnifiedRecipeDetails | null> {
-  const url = `${BASE}/lookup.php?i=${id}`;
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    console.warn("[MealDB] Lookup request failed", res.status);
-    return null;
-  }
-
-  const data: MealDBResponse = await res.json();
-  if (!data.meals || data.meals.length === 0) return null;
-
-  const meal = data.meals[0];
-
   return {
-    id: meal.idMeal,
-    title: meal.strMeal,
-    image: meal.strMealThumb || "",
-    instructions: extractInstructions(meal.strInstructions),
-    ingredients: extractIngredients(meal),
-    servings: 1, // MealDB does not provide servings — default to 1
-    category: meal.strCategory || undefined,
-    area: meal.strArea || undefined,
-    source: "mealdb",
+    idMeal: meal.idMeal,
+    strMeal: meal.strMeal,
+    strMealThumb: meal.strMealThumb,
+    strInstructions: meal.strInstructions,
+    strArea: meal.strArea,
+    strCategory: meal.strCategory,
+    ingredients,
   };
 }
