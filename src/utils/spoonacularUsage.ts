@@ -1,136 +1,127 @@
-// src/utils/spoonacularUsage.ts
-// Updated for hybrid MealDB + Spoonacular fallback mode
+//-----------------------------------------------------
+// Spoonacular Usage + API Wrapper (Final Version)
+//-----------------------------------------------------
 
-// Spoonacular Free Tier Limits:
-// - 50 points per day
-// - 1 request per second
-// - 2 concurrent requests
-// TheMealDB does NOT consume any points, so we only track Spoonacular calls.
+const API_KEY = import.meta.env.VITE_SPOONACULAR_KEY;
+const BASE_URL = "https://api.spoonacular.com/recipes";
 
-const DAILY_LIMIT = 50;               // Spoonacular free daily quota
-const SOFT_LIMIT = 40;                // Show warnings near limit
-const COOLDOWN_MS = 60_000;           // 1 minute cooldown when limit is hit
-const STORAGE_KEY = "spoonacular_usage";
+// Soft usage tracking (local only)
+let spoonacularCallsToday = 0;
 
-type InternalUsage = {
-  date: string;
-  count: number;
-  blockedUntil?: number;
-};
-
-export type SpoonUsageInfo = {
-  date: string;
-  count: number;
-  dailyLimit: number;
-  remaining: number;
-  isNearLimit: boolean;
-  isBlocked: boolean;
-  blockedMsRemaining: number;
-};
-
-function todayKey() {
-  return new Date().toDateString();
+function trackCall() {
+  spoonacularCallsToday++;
+  return spoonacularCallsToday;
 }
 
-function readUsage(): InternalUsage {
-  if (typeof window === "undefined") {
-    return { date: todayKey(), count: 0 };
+// Export so Recipes.tsx can display warnings
+export function getSpoonUsage() {
+  return spoonacularCallsToday;
+}
+
+//-----------------------------------------------------
+// SIMPLE SEARCH (used in Recipes.tsx fallback)
+//-----------------------------------------------------
+export async function searchSpoonacular(query: string) {
+  if (!API_KEY) {
+    console.warn("[Spoonacular] Missing API key");
+    return { ok: false, reason: "missing-key", data: [] };
   }
+
+  if (spoonacularCallsToday >= 50) {
+    return { ok: false, reason: "limit", data: [] };
+  }
+
+  trackCall();
+
+  const url = `${BASE_URL}/complexSearch?query=${encodeURIComponent(
+    query
+  )}&number=20&addRecipeInformation=true&apiKey=${API_KEY}`;
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { date: todayKey(), count: 0 };
-
-    const parsed = JSON.parse(raw) as InternalUsage;
-
-    if (parsed.date !== todayKey()) {
-      return { date: todayKey(), count: 0 };
+    const res = await fetch(url);
+    if (!res.ok) {
+      return { ok: false, reason: "http", data: [] };
     }
 
-    return parsed;
-  } catch {
-    return { date: todayKey(), count: 0 };
+    const json = await res.json();
+    const list = json.results || [];
+
+    // Normalize Recipe Format
+    const mapped = list.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      image: r.image,
+      source: "spoonacular",
+    }));
+
+    return { ok: true, data: mapped };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, reason: "network", data: [] };
   }
 }
 
-function writeUsage(state: InternalUsage) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+//-----------------------------------------------------
+// FULL RECIPE FETCH (used by RecipeDetails.tsx fallback)
+//-----------------------------------------------------
+export async function fetchSpoonacularRecipe(id: string) {
+  if (!API_KEY) {
+    console.warn("[Spoonacular] Missing API key");
+    return null;
+  }
+
+  if (spoonacularCallsToday >= 50) {
+    console.warn("[Spoonacular] Daily limit exceeded");
+    return null;
+  }
+
+  trackCall();
+
+  const url = `${BASE_URL}/${id}/information?includeNutrition=true&apiKey=${API_KEY}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+
+    const data = await res.json();
+
+    return {
+      id: data.id,
+      title: data.title,
+      image: data.image,
+      description: data.summary?.replace(/<[^>]+>/g, "") || "",
+      servings: data.servings ?? null,
+      ingredients:
+        data.extendedIngredients?.map((i: any) => ({
+          ingredient: i.name,
+          measure: i.original,
+        })) || [],
+      instructions:
+        data.analyzedInstructions?.[0]?.steps?.map((s: any) => s.step) || [],
+      tempF: data.temperature?.us || null,
+      tempC: data.temperature?.metric || null,
+      tempFan: null,
+      tempGas: null,
+      source: "spoonacular",
+    };
+  } catch (err) {
+    console.error("[Spoonacular Error]", err);
+    return null;
+  }
 }
 
-// Public: get current usage (for banner / warning)
-export function getSpoonUsage(): SpoonUsageInfo {
-  const state = readUsage();
-  const now = Date.now();
+//-----------------------------------------------------
+// LEGACY COMPATIBILITY WRAPPER
+// Recipes.tsx calls this function
+//-----------------------------------------------------
+export async function trackedSpoonFetch(query: string) {
+  console.log("[trackedSpoonFetch] Query:", query);
 
-  const blockedMsRemaining = state.blockedUntil
-    ? Math.max(0, state.blockedUntil - now)
-    : 0;
+  const result = await searchSpoonacular(query);
 
-  return {
-    date: state.date,
-    count: state.count,
-    dailyLimit: DAILY_LIMIT,
-    remaining: Math.max(0, DAILY_LIMIT - state.count),
-    isNearLimit: state.count >= SOFT_LIMIT && state.count < DAILY_LIMIT,
-    isBlocked: blockedMsRemaining > 0 || state.count >= DAILY_LIMIT,
-    blockedMsRemaining,
-  };
-}
-
-// Internal: increment usage count for Spoonacular-only requests
-function registerCallAttempt(): SpoonUsageInfo {
-  const state = readUsage();
-  const now = Date.now();
-
-  // Cooldown active?
-  if (state.blockedUntil && now < state.blockedUntil) {
-    return { ...getSpoonUsage(), isBlocked: true };
+  if (!result.ok) {
+    return { ok: false, data: [] };
   }
 
-  // Increment count ONLY for Spoonacular fallback
-  state.count += 1;
-
-  if (state.count >= DAILY_LIMIT) {
-    state.blockedUntil = now + COOLDOWN_MS;
-  }
-
-  writeUsage(state);
-  return getSpoonUsage();
-}
-
-// ======================================================
-// 🔥 WRAPPED FETCH FOR SPOONACULAR ONLY
-// ======================================================
-
-export async function trackedSpoonFetch(
-  input: RequestInfo | URL,
-  init?: RequestInit
-): Promise<Response> {
-  const usage = registerCallAttempt();
-
-  // Hard block when quota is exceeded
-  if (usage.isBlocked && usage.count >= DAILY_LIMIT) {
-    const err = new Error("SPOON_DAILY_LIMIT");
-    (err as any).usage = usage;
-    throw err;
-  }
-
-  const res = await fetch(input, init);
-
-  // Spoonacular signals rate/limit issues with:
-  // 401 = invalid key OR exhausted points
-  // 402 = out of points
-  // 429 = too many requests
-  if (res.status === 401 || res.status === 402 || res.status === 429) {
-    const state = readUsage();
-    state.blockedUntil = Date.now() + COOLDOWN_MS;
-    writeUsage(state);
-
-    const err = new Error("SPOON_RATE_LIMIT");
-    (err as any).usage = getSpoonUsage();
-    throw err;
-  }
-
-  return res;
+  return { ok: true, data: result.data };
 }

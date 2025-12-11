@@ -1,209 +1,230 @@
-// src/pages/Recipes.tsx — Hybrid MealDB + Spoonacular Search
-
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
-
-import { mealdbSearch } from "@/utils/mealdb";
-import { trackedSpoonFetch, getSpoonUsage } from "@/utils/spoonacularUsage";
+import { useEffect, useState } from "react";
+import { useSearchParams, Link } from "react-router-dom";
 
 import FloralDivider from "@/components/FloralDivider";
-import DecorativeFrame from "@/components/DecorativeFrame";
+import BackToTop from "@/components/BackToTop";
 
-import bgGuide from "@/assets/backgrounds/bg-guide.jpg";
+import { mealdbSearch } from "@/utils/mealdb";
+import { trackedSpoonFetch } from "@/utils/spoonacularUsage";
+
+import recipesBanner from "@/assets/banners/recipes-banner.png";
+import bgRecipes from "@/assets/backgrounds/bg-recipes.png";
+
 import "@/index.css";
-
-// Unified preview format (MealDB + Spoonacular)
-interface RecipePreview {
-  id: string;
-  title: string;
-  image: string;
-  source: "mealdb" | "spoonacular";
-}
 
 export default function Recipes() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("search") || "";
 
   const [query, setQuery] = useState(initialQuery);
-  const [filterApplied, setFilterApplied] = useState(false);
+  const [recipes, setRecipes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // FORCE re-run when query changes
-  const shouldSearch = filterApplied || initialQuery;
+  /* ----------------------------------------------
+     SEARCH FORM SUBMIT
+  ----------------------------------------------- */
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSearchParams({ search: query });
+  }
 
-  const {
-    data: results,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ["recipes", query],
-    queryFn: async () => {
-      if (!query || query.trim().length === 0) return [];
-
-      console.log("[Recipes] Searching MealDB first:", query);
-
-      // 1️⃣ Try TheMealDB Premium (unlimited)
-      const mealdb = await mealdbSearch(query);
-
-      if (mealdb.length > 0) {
-        console.log("[Recipes] MealDB returned results:", mealdb.length);
-        return mealdb;
-      }
-
-      console.log("[Recipes] MealDB returned 0… falling back to Spoonacular");
-
-      // 2️⃣ Spoonacular fallback
-      const url = `https://api.spoonacular.com/recipes/complexSearch?query=${encodeURIComponent(
-        query
-      )}&number=10&apiKey=${
-        import.meta.env.VITE_SPOONACULAR_API_KEY
-      }&instructionsRequired=true&addRecipeInformation=true`;
-
-      const res = await trackedSpoonFetch(url);
-      if (!res.ok) {
-        console.warn("[Spoonacular] fallback request failed", res.status);
-        return [];
-      }
-
-      const data = await res.json();
-
-      return (
-        data.results?.map((r: any) => ({
-          id: r.id.toString(),
-          title: r.title,
-          image: r.image || "",
-          source: "spoonacular" as const,
-        })) || []
-      );
-    },
-    enabled: shouldSearch !== "",
-    staleTime: 1000 * 60 * 60, // 1 hour (MealDB allows this)
-  });
-
-  // Auto-run search if URL has ?search=
-  useEffect(() => {
-    if (initialQuery) {
-      setFilterApplied(true);
-      refetch();
+  /* ----------------------------------------------
+     HYBRID SEARCH FUNCTION
+  ----------------------------------------------- */
+  async function fetchRecipes(q: string) {
+    const clean = q.trim();
+    if (!clean) {
+      setRecipes([]);
+      setError(null);
+      return;
     }
-    // eslint-disable-next-line
-  }, []);
 
-  const usage = getSpoonUsage();
+    setLoading(true);
+    setError(null);
 
-  // Handle Spoonacular rate limit
-  const isLimitError =
-    error &&
-    (error as any).message &&
-    ((error as any).message === "SPOON_DAILY_LIMIT" ||
-      (error as any).message === "SPOON_RATE_LIMIT");
+    try {
+      let combined: any[] = [];
 
+      /* ------------------------------
+         1) MealDB first
+      ------------------------------- */
+      console.log("[Recipes] Searching MealDB:", clean);
+
+      try {
+        const hits = await mealdbSearch(clean);
+
+        if (hits.length) {
+          console.log("[Recipes] MealDB returned:", hits.length);
+
+          combined = hits.map((m) => ({
+            id: m.id,
+            title: m.title,
+            image: m.image,
+            readyInMinutes: 30,
+            cuisines: m.area ? [m.area] : [],
+            diets: [],
+            dishTypes: m.category ? [m.category] : [],
+            vegetarian: false,
+            vegan: false,
+            veryHealthy: false,
+            source: "mealdb",
+          }));
+        }
+      } catch (err) {
+        console.warn("[Recipes] MealDB error:", err);
+      }
+
+      const gotMealDb = combined.length > 0;
+
+      /* ------------------------------
+         2) Spoonacular fallback
+      ------------------------------- */
+      if (!gotMealDb) {
+        console.log("[Recipes] Falling back to Spoonacular…");
+
+        const params = new URLSearchParams();
+        params.set("query", clean);
+        params.set("addRecipeInformation", "true");
+        params.set("number", "24");
+
+        const url = `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`;
+        const res = await trackedSpoonFetch(url);
+
+        if (!res.ok) throw new Error("Spoonacular request failed");
+
+        const data = (await res.json()) as { results?: any[] };
+        const results = data.results ?? [];
+
+        combined = results.map((r) => ({
+          id: r.id,
+          title: r.title,
+          image: r.image,
+          readyInMinutes: r.readyInMinutes ?? 0,
+          cuisines: r.cuisines ?? [],
+          diets: r.diets ?? [],
+          dishTypes: r.dishTypes ?? [],
+          vegetarian: r.vegetarian,
+          vegan: r.vegan,
+          veryHealthy: r.veryHealthy,
+          source: "spoonacular",
+        }));
+      }
+
+      setRecipes(combined);
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong while loading recipes.");
+      setRecipes([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* ----------------------------------------------
+     RUN SEARCH WHEN URL PARAM CHANGES
+  ----------------------------------------------- */
+  useEffect(() => {
+    const q = searchParams.get("search") || "";
+    fetchRecipes(q);
+  }, [searchParams]);
+
+  /* ----------------------------------------------
+     RENDER
+  ----------------------------------------------- */
   return (
     <div
-      className="min-h-screen pb-28"
+      className="min-h-screen pb-28 pt-4"
       style={{
-        backgroundImage: `url(${bgGuide})`,
+        backgroundImage: `url(${bgRecipes})`,
         backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
       }}
     >
-      <div className="bg-[#1b302c]/15 min-h-screen px-4 py-10">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl font-bold text-white text-center drop-shadow-lg mb-2">
+      {/* Banner */}
+      <div className="relative w-full max-w-3xl mx-auto">
+        <img
+          src={recipesBanner}
+          className="w-full rounded-2xl shadow-xl object-cover"
+          alt="Recipes Banner"
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <h1 className="text-4xl font-bold text-white drop-shadow-lg">
             Recipes
           </h1>
-
-          <FloralDivider variant="vine" />
-
-          <DecorativeFrame className="mt-6">
-            <div className="p-6 space-y-6">
-
-              {/* Search Bar */}
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  placeholder="Search recipes…"
-                  className="flex-1 px-4 py-3 rounded-xl border border-[#9bc99e] bg-white shadow text-[#1b302c]"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-
-                <button
-                  onClick={() => {
-                    setFilterApplied(true);
-                    setSearchParams({ search: query });
-                    refetch();
-                  }}
-                  className="px-4 py-3 rounded-xl bg-[#3c6150] text-white shadow hover:bg-[#2f4d41]"
-                >
-                  Go
-                </button>
-              </div>
-
-              {/* Spoonacular quota visual (optional) */}
-              {usage.isNearLimit && (
-                <p className="text-xs text-[#5f3c43] text-right">
-                  ⚠ Spoonacular fallback limit: {usage.count}/{usage.dailyLimit}
-                </p>
-              )}
-
-              {/* Error display */}
-              {isLimitError && (
-                <div className="bg-[#fde2e1] text-[#7a2626] p-3 rounded-xl text-center shadow">
-                  <p className="font-semibold">
-                    Spoonacular has hit its free daily limit.
-                  </p>
-                  <p className="text-xs mt-1">
-                    TheMealDB results still work normally.  
-                  </p>
-                </div>
-              )}
-
-              {/* Loading */}
-              {isLoading && (
-                <p className="text-center text-[#1b302c]">Searching…</p>
-              )}
-
-              {/* No results */}
-              {!isLoading && results?.length === 0 && (
-                <p className="text-center text-[#1b302c]">
-                  No recipes found. Try something else.
-                </p>
-              )}
-
-              {/* Results Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {results?.map((recipe: RecipePreview) => (
-                  <Link
-                    key={recipe.id}
-                    to={`/recipes/${recipe.id}?source=${recipe.source}`}
-                    className="block bg-white/70 rounded-xl shadow hover:shadow-md 
-                               overflow-hidden transition border border-[#d9c7a3]"
-                  >
-                    <img
-                      src={recipe.image}
-                      alt={recipe.title}
-                      className="w-full h-44 object-cover recipe-thumb"
-                    />
-
-                    <div className="p-4">
-                      <h3 className="font-bold text-[#1b302c] text-lg leading-snug">
-                        {recipe.title}
-                      </h3>
-
-                      {/* Optional small source badge */}
-                      <span className="source-badge mt-2 inline-block">
-                        {recipe.source === "mealdb" ? "MealDB" : "Spoonacular"}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </DecorativeFrame>
         </div>
       </div>
+
+      <FloralDivider variant="vine" size="sm" />
+
+      {/* SEARCH BAR */}
+      <form
+        onSubmit={handleSearchSubmit}
+        className="max-w-xl mx-auto mt-6 bg-[#fffaf4] p-4 rounded-2xl border border-[#e4d5b8] shadow-md"
+      >
+        <div className="flex gap-3">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search recipes…"
+            className="flex-1 p-3 rounded-xl border border-[#d8c6a4] bg-white text-[#4b3b2f]"
+          />
+          <button
+            type="submit"
+            className="px-4 py-3 bg-emerald-700 text-white font-semibold rounded-xl shadow hover:bg-emerald-800"
+          >
+            Go
+          </button>
+        </div>
+      </form>
+
+      {/* Loading / Error */}
+      <div className="max-w-4xl mx-auto mt-6">
+        {loading && (
+          <p className="text-center text-[#4b3b2f] text-lg font-medium">
+            Searching…
+          </p>
+        )}
+
+        {error && (
+          <div className="text-center text-red-700 bg-red-100 border border-red-300 p-3 rounded-xl">
+            {error}
+          </div>
+        )}
+      </div>
+
+      {/* RESULTS GRID */}
+      <div className="max-w-4xl mx-auto mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
+        {recipes.map((r) => (
+          <Link
+            key={r.id}
+            to={`/recipes/${r.id}?source=${r.source}`}
+            className="block group"
+          >
+            <div className="bg-white/80 rounded-2xl overflow-hidden shadow-md border border-[#e4d5b8] hover:shadow-xl transition">
+              <img
+                src={r.image}
+                alt={r.title}
+                className="w-full h-56 object-cover group-hover:scale-[1.03] transition"
+              />
+              <div className="p-4">
+                <h3 className="font-semibold text-lg text-[#4b3b2f] group-hover:text-emerald-700 transition">
+                  {r.title}
+                </h3>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* NO RESULTS */}
+      {!loading && !error && recipes.length === 0 && (
+        <p className="text-center text-[#4b3b2f] text-lg mt-10">
+          Try searching for something delicious!
+        </p>
+      )}
+
+      <BackToTop />
     </div>
   );
 }

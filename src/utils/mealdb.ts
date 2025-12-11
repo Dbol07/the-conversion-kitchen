@@ -1,80 +1,178 @@
 // src/utils/mealdb.ts
+// TheMealDB Premium integration + smart search helper
 
-export interface MealDbRecipe {
+const RAW_KEY = import.meta.env.VITE_MEALDB_KEY || "1";
+
+// If you have a premium key, TheMealDB uses v2/{KEY}
+// If not, it uses the old free v1/1 endpoint.
+const MEALDB_BASE =
+  RAW_KEY && RAW_KEY !== "1"
+    ? `https://www.themealdb.com/api/json/v2/${RAW_KEY}`
+    : "https://www.themealdb.com/api/json/v1/1";
+
+type MealDbApiMeal = {
   idMeal: string;
   strMeal: string;
-  strMealThumb: string;
-  strInstructions: string;
-  strArea?: string;
-  strCategory?: string;
+  strMealThumb: string | null;
+  strArea: string | null;
+  strCategory: string | null;
+  strInstructions: string | null;
+  strTags: string | null;
+  // plus the ingredient/measure fields we’ll read dynamically:
+  [key: string]: any;
+};
+
+export interface MealDbSearchResult {
+  id: number;
+  title: string;
+  image: string;
+  area?: string;
+  category?: string;
+}
+
+export interface MealDbDetails extends MealDbSearchResult {
+  instructions: string;
+  tags: string[];
   ingredients: { ingredient: string; measure: string }[];
 }
-// SEARCH MealDB recipes by keyword
-export async function mealdbSearch(query: string) {
-  const key = import.meta.env.VITE_MEALDB_KEY || "1";
-  const url = `https://www.themealdb.com/api/json/v1/${key}/search.php?s=${encodeURIComponent(query)}`;
 
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("MealDB search failed");
+/**
+ * Low-level fetch helper
+ */
+async function callMealDb(
+  path: string,
+  params: Record<string, string>
+): Promise<MealDbApiMeal[]> {
+  const url = new URL(MEALDB_BASE + path);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
-  const data = await res.json();
-  if (!data.meals) return [];
+  console.log("[MealDB] Fetch →", url.toString());
 
-  // Convert to unified preview format expected by Recipes.tsx
-  return data.meals.map((m: any) => ({
-    id: m.idMeal,
-    title: m.strMeal,
-    image: m.strMealThumb,
-    source: "mealdb" as const,
-  }));
-}
-                                                              
-
-/* ----------------------------------------------------
-   Fetch a FULL RECIPE by ID (MealDB Premium API)
----------------------------------------------------- */
-
-export async function fetchMealDbRecipe(id: string): Promise<MealDbRecipe> {
-  const key = import.meta.env.VITE_MEALDB_KEY || "1";
-
-  const url = `https://www.themealdb.com/api/json/v1/${key}/lookup.php?i=${id}`;
-
-  const res = await fetch(url);
-
+  const res = await fetch(url.toString());
   if (!res.ok) {
-    throw new Error(`MealDB HTTP ${res.status}`);
+    throw new Error(`MealDB error: ${res.status} ${res.statusText}`);
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as { meals: MealDbApiMeal[] | null };
+  return data.meals ?? [];
+}
 
-  if (!data.meals?.length) {
-    throw new Error("Recipe not found");
-  }
-
-  const meal = data.meals[0];
-
-  // Build ingredients array
+/**
+ * Normalize a MealDB meal into a detail object
+ */
+function normalizeMealDetails(meal: MealDbApiMeal): MealDbDetails {
   const ingredients: { ingredient: string; measure: string }[] = [];
 
   for (let i = 1; i <= 20; i++) {
-    const ing = meal[`strIngredient${i}`];
-    const meas = meal[`strMeasure${i}`];
-
-    if (ing && ing.trim()) {
+    const ing = (meal[`strIngredient${i}`] as string | null)?.trim();
+    const measure = (meal[`strMeasure${i}`] as string | null)?.trim();
+    if (ing && ing.length > 0) {
       ingredients.push({
-        ingredient: ing.trim(),
-        measure: meas?.trim() || "",
+        ingredient: ing,
+        measure: measure || "",
       });
     }
   }
 
+  const tags =
+    meal.strTags?.split(",").map((t: string) => t.trim()).filter(Boolean) ?? [];
+
   return {
-    idMeal: meal.idMeal,
-    strMeal: meal.strMeal,
-    strMealThumb: meal.strMealThumb,
-    strInstructions: meal.strInstructions,
-    strArea: meal.strArea,
-    strCategory: meal.strCategory,
+    id: Number(meal.idMeal),
+    title: meal.strMeal,
+    image: meal.strMealThumb || "",
+    area: meal.strArea || undefined,
+    category: meal.strCategory || undefined,
+    instructions: meal.strInstructions || "",
+    tags,
     ingredients,
   };
+}
+
+/**
+ * Normalize a MealDB meal into a lightweight search result
+ */
+function normalizeMealSearch(meal: MealDbApiMeal): MealDbSearchResult {
+  return {
+    id: Number(meal.idMeal),
+    title: meal.strMeal,
+    image: meal.strMealThumb || "",
+    area: meal.strArea || undefined,
+    category: meal.strCategory || undefined,
+  };
+}
+
+/**
+ * Smart MealDB search:
+ * - Single word → treat as ingredient first (filter.php?i=), then fallback to name search.
+ * - Multi-word → treat as recipe name first (search.php?s=),
+ *   then fallback to ingredient using the first “clean” word.
+ */
+export async function mealdbSearch(
+  rawQuery: string
+): Promise<MealDbSearchResult[]> {
+  const query = rawQuery.trim();
+  if (!query) return [];
+
+  const lower = query.toLowerCase();
+  const words = lower.split(/\s+/).filter(Boolean);
+
+  const isSingleWord = words.length === 1;
+
+  async function searchByName(q: string) {
+    const meals = await callMealDb("/search.php", { s: q });
+    return meals.map(normalizeMealSearch);
+  }
+
+  async function searchByIngredient(word: string) {
+    const meals = await callMealDb("/filter.php", { i: word });
+    // filter.php doesn’t always include area/category, so we only map what we have
+    return meals.map((meal) => ({
+      id: Number(meal.idMeal),
+      title: meal.strMeal,
+      image: meal.strMealThumb || "",
+      area: undefined,
+      category: undefined,
+    }));
+  }
+
+  let results: MealDbSearchResult[] = [];
+
+  if (isSingleWord) {
+    // Example: "chicken", "goat", "beef"
+    console.log("[MealDB] Ingredient-first search:", lower);
+    results = await searchByIngredient(lower);
+
+    if (!results.length) {
+      console.log("[MealDB] No ingredient matches, trying name search");
+      results = await searchByName(lower);
+    }
+  } else {
+    // Example: "chicken curry", "goat stew"
+    console.log("[MealDB] Name-first search:", lower);
+    results = await searchByName(lower);
+
+    if (!results.length) {
+      // fallback: grab first “ingredient-ish” word (letters only)
+      const ingredientWord =
+        words.find((w) => /^[a-zA-Z]+$/.test(w)) ?? words[0];
+      console.log(
+        "[MealDB] Name search empty, trying ingredient:",
+        ingredientWord
+      );
+      results = await searchByIngredient(ingredientWord);
+    }
+  }
+
+  console.log("[MealDB] Final smart results:", results.length);
+  return results;
+}
+
+/**
+ * Lookup full details by ID (used by details page, if needed)
+ */
+export async function mealdbLookup(id: string): Promise<MealDbDetails | null> {
+  const meals = await callMealDb("/lookup.php", { i: id });
+  if (!meals.length) return null;
+  return normalizeMealDetails(meals[0]);
 }
