@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import whiskIcon from "@/assets/fallback/whisk-icon.png";
 
-export default function BackToTop() {
+type BackToTopProps = {
+  variant?: "fixed" | "inline";
+};
+
+export default function BackToTop({
+  variant = "fixed",
+}: BackToTopProps) {
   const [visible, setVisible] = useState(false);
   const [showTip, setShowTip] = useState(false);
 
@@ -21,7 +27,11 @@ export default function BackToTop() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.35 }}
-      className="fixed bottom-7 right-7 z-50 flex flex-col items-center"
+className={
+  variant === "fixed"
+    ? "fixed bottom-7 right-7 z-50 flex flex-col items-center"
+    : "relative flex flex-col items-center"
+}
     >
       {/* Tooltip */}
       {showTip && (
@@ -89,7 +99,7 @@ export default function BackToTop() {
         <img
           src={whiskIcon}
           alt="Back to top whisk"
-          className="w-8 h-8 relative z-10 opacity-95"
+className="w-24 h-24 relative z-10 opacity-95"
         />
       </motion.button>
     </motion.div>
