@@ -47,7 +47,7 @@ export default function Accordion({
         className={`
           w-full px-6 py-4 flex items-center gap-3 text-left
           bg-gradient-to-r from-[#b8d3d5]/80 to-[#a77a72]/60
-          hover:from-[#CDEEC9] hover:to-[#ADE3A6]/80
+          hover:from-[#A89BD4] hover:to-[#4F4473]/80
           transition-all
           ${className}  /* ⭐ allows overriding */
         `}
