@@ -20,14 +20,16 @@ export default function Recipes() {
   const [recipes, setRecipes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+const [hasSearched, setHasSearched] = useState(false);
 
   /* ----------------------------------------------
      SEARCH FORM SUBMIT
   ----------------------------------------------- */
-  function handleSearchSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSearchParams({ search: query });
-  }
+function handleSearchSubmit(e: React.FormEvent) {
+  e.preventDefault();
+  setHasSearched(true);
+  setSearchParams({ search: query });
+}
 
   /* ----------------------------------------------
      HYBRID SEARCH FUNCTION
@@ -89,26 +91,22 @@ export default function Recipes() {
         params.set("number", "24");
 
         const url = `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`;
-        const res = await trackedSpoonFetch(url);
+// Spoonacular fallback (trackedSpoonFetch already returns JSON)
+const data = await trackedSpoonFetch(url);
 
-        if (!res.ok) throw new Error("Spoonacular request failed");
-
-        const data = (await res.json()) as { results?: any[] };
-        const results = data.results ?? [];
-
-        combined = results.map((r) => ({
-          id: r.id,
-          title: r.title,
-          image: r.image,
-          readyInMinutes: r.readyInMinutes ?? 0,
-          cuisines: r.cuisines ?? [],
-          diets: r.diets ?? [],
-          dishTypes: r.dishTypes ?? [],
-          vegetarian: r.vegetarian,
-          vegan: r.vegan,
-          veryHealthy: r.veryHealthy,
-          source: "spoonacular",
-        }));
+combined = (data?.results || []).map((r: any) => ({
+  id: r.id,
+  title: r.title,
+  image: r.image,
+  readyInMinutes: r.readyInMinutes ?? 0,
+  cuisines: r.cuisines ?? [],
+  diets: r.diets ?? [],
+  dishTypes: r.dishTypes ?? [],
+  vegetarian: r.vegetarian,
+  vegan: r.vegan,
+  veryHealthy: r.veryHealthy,
+  source: "spoonacular",
+}));
       }
 
       setRecipes(combined);
@@ -193,38 +191,83 @@ export default function Recipes() {
         )}
       </div>
 
-      {/* RESULTS GRID */}
-      <div className="max-w-4xl mx-auto mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-        {recipes.map((r) => (
-          <Link
-            key={r.id}
-            to={`/recipes/${r.id}?source=${r.source}`}
-            className="block group"
-          >
-            <div className="bg-white/80 rounded-2xl overflow-hidden shadow-md border border-[#e4d5b8] hover:shadow-xl transition">
-              <img
-                src={r.image}
-                alt={r.title}
-                className="w-full h-56 object-cover group-hover:scale-[1.03] transition"
-              />
-              <div className="p-4">
-                <h3 className="font-semibold text-lg text-[#4b3b2f] group-hover:text-emerald-700 transition">
-                  {r.title}
-                </h3>
-              </div>
+{/* BEFORE SEARCH (idle state) */}
+{!hasSearched && (
+  <div className="max-w-4xl mx-auto mt-6 px-4 text-center">
+    <h2 className="text-lg font-medium text-[#4b3b2f]">
+      Start a cozy little kitchen project — gather your ingredients and take it step by step. 🌿
+    </h2>
+    <p className="mt-2 text-sm italic text-[#5f3c43]">
+      Try searching for something delicious!
+    </p>
+  </div>
+)}
+
+{/* RESULT COUNT */}
+{hasSearched && recipes.length > 0 && (
+  <div className="max-w-4xl mx-auto mt-6 px-4">
+    <p className="text-sm text-[#5f3c43] italic">
+      ✨ Found {recipes.length} cozy recipe{recipes.length > 1 ? "s" : ""} ✨
+    </p>
+  </div>
+)}
+
+{/* EMPTY STATE (after search, no results) */}
+{hasSearched && !loading && recipes.length === 0 && (
+  <div className="max-w-4xl mx-auto mt-12 px-4 text-center">
+    <h2 className="text-lg font-medium text-[#4b3b2f]">
+      No cozy recipes found 🍂
+    </h2>
+    <p className="mt-2 text-sm italic text-[#5f3c43]">
+      Try a different ingredient, cuisine, or a simpler search term.
+    </p>
+  </div>
+)}
+{/* RESULTS GRID */}
+{hasSearched && recipes.length > 0 && (
+  <div className="max-w-4xl mx-auto mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
+    {recipes.map((r) => (
+      <Link
+        key={r.id}
+        to={`/recipes/${r.id}?source=${r.source}`}
+        className="block group"
+      >
+        <div className="relative bg-white/80 rounded-2xl overflow-hidden shadow-md border border-[#e4d5b8] hover:shadow-xl transition">
+
+          {/* Source badge */}
+          {r.source && (
+            <div className="absolute top-2 right-2 z-10 text-xs px-2 py-0.5 rounded-full bg-white/80 border border-[#e4d5b8] text-[#4b3b2f]">
+              {r.source === "mealdb" ? "🌿 MealDB" : "🍽 Spoonacular"}
             </div>
-          </Link>
-        ))}
-      </div>
+          )}
 
-      {/* NO RESULTS */}
-      {!loading && !error && recipes.length === 0 && (
-        <p className="text-center text-[#4b3b2f] text-lg mt-10">
-          Try searching for something delicious!
-        </p>
-      )}
+          {/* Image */}
+          <div className="aspect-[4/3] overflow-hidden">
+            <img
+              src={r.image}
+              alt={r.title}
+              className="w-full h-full object-cover transition-transform group-hover:scale-[1.03]"
+            />
+          </div>
 
-      <BackToTop />
+          {/* Title */}
+          <div className="p-4">
+            <h3 className="font-semibold text-lg text-[#4b3b2f] transition-colors group-hover:text-emerald-700 line-clamp-2">
+              {r.title}
+            </h3>
+          </div>
+
+        </div>
+      </Link>
+    ))}
+  </div>
+)}
+
+
+{/* Floating Back To Top (Recipes page) */}
+<div className="fixed right-5 bottom-24 z-40">
+  <BackToTop variant="inline" />
+</div>
     </div>
   );
 }

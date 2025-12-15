@@ -176,11 +176,17 @@ step = step.replace(
             >
 <span
   style={{
+    display: "inline-flex",
+    alignItems: "center",
+    boxSizing: "border-box",
+    border: "1px solid transparent", // 👈 reserve space
     backgroundColor: "#D7B4ED",
     color: "#271A36",
     padding: "2px 8px",
     borderRadius: "999px",
     fontSize: "0.85em",
+    margin: "0 2px",
+    transition: "transform 0.15s ease, box-shadow 0.15s ease",
   }}
 >
   {c}°C • {f}°F • Gas Mark {gas}
@@ -244,9 +250,14 @@ step = step.replace(
 
       // ML / FL OZ
 else if (part.startsWith("__MLFL__")) {
-  const [ml, floz] = part.replace("__MLFL__", "").split("/");
-  jsxParts.push(
-    (
+  const [ml, flozRaw] = part.replace("__MLFL__", "").split("/");
+  const floz = Number(flozRaw);
+
+  // If fl oz is invalid, fall back to plain text
+  if (Number.isNaN(floz)) {
+    jsxParts.push(`${ml}ml`);
+  } else {
+    jsxParts.push(
       <span
         style={{
           backgroundColor: "#EDC1B9",
@@ -257,10 +268,10 @@ else if (part.startsWith("__MLFL__")) {
           margin: "0 2px",
         }}
       >
-        {ml}ml ≈ {Number(floz).toFixed(1)}fl oz ✨
+        {ml}ml ≈ {floz.toFixed(1)}fl oz ✨
       </span>
-    )
-  );
+    );
+  }
 }
 
 // ML (single value)

@@ -31,32 +31,31 @@ export default function Printables() {
         <h1 className="relative z-10 text-3xl sm:text-4xl font-bold text-white drop-shadow-lg text-center">
           Printable Charts
         </h1>
+<p className="relative z-10 mt-2 text-sm sm:text-base text-[#f2ebd7] text-center opacity-90">
+  Cozy kitchen helpers — download & print to keep handy.
+</p>
+
       </div>
 
-      <FloralDivider variant="vine" size="md" />
-
-      <p className="text-center text-[#4b3b2f] mt-4 mb-8">
-        Cozy kitchen helpers — download & print to keep handy.
-      </p>
 
       {/* ⭐ GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
         {printables.map((p) => (
           <div
             key={p.id}
-            className="bg-white/90 border border-[#e4d5b8] rounded-xl p-4 shadow hover:shadow-lg transition flex flex-col items-center"
+className="bg-white/85 border border-[#e4d5b8] rounded-xl p-3 shadow-sm hover:shadow-md transition flex flex-col items-center"
           >
             <img
               src={p.thumb}
               alt={p.title}
-              className="rounded-lg w-full mb-3 shadow cursor-pointer"
+className="rounded-lg w-full mb-2 shadow-sm cursor-pointer hover:scale-[1.01] transition"
               onClick={() => setActive(p)}
             />
-            <h3 className="text-[#4b3b2f] font-semibold mb-3">{p.title}</h3>
+<h3 className="sr-only">{p.title}</h3>
 
             <button
               onClick={() => setActive(p)}
-              className="bg-[#3c6150] text-white px-4 py-2 rounded-lg w-full mb-2 hover:bg-[#2c493c]"
+className="bg-[#3c6150]/90 text-white px-4 py-2 rounded-lg w-full mb-2 hover:bg-[#2c493c] text-sm"
             >
               Preview
             </button>
@@ -64,7 +63,7 @@ export default function Printables() {
             <a
               href={p.pdf}
               target="_blank"
-              className="bg-[#f7d774] text-[#4b3b2f] font-semibold px-4 py-2 rounded-lg w-full text-center shadow hover:bg-[#f2c94c]"
+className="bg-[#f7d774] text-[#4b3b2f] font-semibold px-4 py-2 rounded-lg w-full text-center shadow-sm hover:bg-[#f2c94c] text-sm"
             >
               Download PDF
             </a>

@@ -1,106 +1,120 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import whiskIcon from "@/assets/fallback/whisk-icon.png";
+import whiskIcon from "@/assets/icons/ui/icon-back-to-top.svg";
 
+/* -------------------------------------------------------
+   TYPES
+-------------------------------------------------------- */
 type BackToTopProps = {
   variant?: "fixed" | "inline";
 };
 
-export default function BackToTop({
-  variant = "fixed",
-}: BackToTopProps) {
+/* -------------------------------------------------------
+   COMPONENT
+-------------------------------------------------------- */
+export default function BackToTop({ variant = "fixed" }: BackToTopProps) {
   const [visible, setVisible] = useState(false);
-  const [showTip, setShowTip] = useState(false);
+const [showLabel, setShowLabel] = useState(false);
 
+
+  /* --------------------------------------------------
+     SHOW / HIDE ON SCROLL
+  --------------------------------------------------- */
   useEffect(() => {
     const handler = () => setVisible(window.scrollY > 280);
     window.addEventListener("scroll", handler);
-
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
   if (!visible) return null;
 
+  /* --------------------------------------------------
+     RENDER
+  --------------------------------------------------- */
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      /* Entrance animation only — no layout shift */
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.35 }}
-className={
-  variant === "fixed"
-    ? "fixed bottom-7 right-7 z-50 flex flex-col items-center"
-    : "relative flex flex-col items-center"
-}
-    >
-      {/* Tooltip */}
-      {showTip && (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 6 }}
-          transition={{ duration: 0.25 }}
-          className="
-            mb-2 px-3 py-1 
-            text-xs font-medium 
-            text-[#4b3b2f]
-            bg-[#fffaf4]/95 
-            border border-[#e5d4b5]
-            rounded-xl shadow-md 
-            backdrop-blur-sm
-          "
-        >
-          Back to top ✨
-        </motion.div>
-      )}
+      exit={{ opacity: 0, y: 10 }}
+      transition={{ duration: 0.3 }}
 
+      /* Fixed size container prevents page shake */
+      className={
+        variant === "fixed"
+          ? "fixed bottom-7 right-7 z-50 flex items-center justify-center"
+          : "relative flex items-center justify-center"
+      }
+      style={{
+        width: 72,
+        height: 72,
+      }}
+    >
       <motion.button
-        onClick={() => {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          setShowTip(true);
-          setTimeout(() => setShowTip(false), 1200);
-        }}
-        onMouseEnter={() => setShowTip(true)}
-        onMouseLeave={() => setShowTip(false)}
-        whileHover={{ scale: 1.1, rotate: -3 }}
-        whileTap={{ scale: 0.9 }}
-        className="
-          relative w-16 h-16 
-          rounded-full 
-          bg-[#fff8ed]/90 
-          border border-[#e7d8bc] 
-          shadow-lg
-          flex items-center justify-center
-          hover:bg-[#f4e9d3]
-          transition duration-200
-        "
+        /* Hover uses translate only — no scale reflow */
+        whileHover={{ y: -3, rotate: -3 }}
+        whileTap={{ scale: 0.95 }}
+
+onMouseEnter={() => setShowLabel(true)}
+onMouseLeave={() => setShowLabel(false)}
+onFocus={() => setShowLabel(true)}
+onBlur={() => setShowLabel(false)}
+aria-label="Back to top"
+
+        onClick={() =>
+          window.scrollTo({ top: 0, behavior: "smooth" })
+        }
+
+        /* Border reserved to avoid hover jump */
+      className={[
+  "relative",
+  "w-14 h-14",
+  "rounded-full",
+  "bg-[#fff8ed]/90",
+  "border-2 border-transparent",
+  "shadow-lg",
+  "flex items-center justify-center",
+].join(" ")}
+
       >
-        {/* Glow ring */}
+{showLabel && (
+  <div
+    className="
+      absolute
+      -top-10
+      px-3 py-1
+      rounded-full
+      bg-[#fff8ed]
+      border border-[#e4d5b8]
+      text-sm
+      text-[#4b3b2f]
+      shadow-md
+      whitespace-nowrap
+      pointer-events-none
+    "
+  >
+    ✨ Back To Top! ✨
+  </div>
+)}
+
+        {/* Soft glow ring (purely visual, no layout impact) */}
         <span
           className="
-            absolute inset-0 
-            rounded-full 
-            bg-amber-200/20 
+            absolute inset-0
+            rounded-full
+            bg-amber-200/20
             blur-xl
             pointer-events-none
           "
-        ></span>
-
-        {/* Sparkles */}
-        <motion.span
-          className="absolute -top-1 left-1 text-amber-400 text-xs"
-          animate={{ y: [0, -4, 0], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          ✨
-        </motion.span>
-
-        {/* Whisk icon */}
-        <img
-          src={whiskIcon}
-          alt="Back to top whisk"
-className="w-24 h-24 relative z-10 opacity-95"
         />
+
+        {/* Whisk icon — larger & stable */}
+<img
+  src={whiskIcon}
+  alt="Back to top"
+  className="w-12 h-12" // 48x48 (ideal tap target)
+ />
+
       </motion.button>
     </motion.div>
   );
